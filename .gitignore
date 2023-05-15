@@ -1,0 +1,10 @@
+
+config.properties
+build
+gradlew
+gradlew.bat
+report.dtd
+word2vec_model
+.idea
+.gradle
+gradle
