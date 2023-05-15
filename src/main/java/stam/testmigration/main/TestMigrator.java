@@ -7,18 +7,14 @@ import stam.testmigration.setup.SetupTargetApp;
 public class TestMigrator {
     public static void main(String[] args) {
 
-        ConfigCreator configCreator = new ConfigCreator();
-        configCreator.createConfigFile();
+        new ConfigCreator().createConfigFile();
 
-        ConfigurationRetriever configurationRetriever = new ConfigurationRetriever();
-        configurationRetriever.getConfigurations();
-        configurationRetriever.getSourceTargetDirs();
+        ConfigurationRetriever configRet = new ConfigurationRetriever();
+        configRet.getConfigurations();
+        configRet.getSourceTargetDirs();
 
-        SetupTargetApp setupTargetApp = new SetupTargetApp();
-        setupTargetApp.setupTarget();
-
-        TestModifier testModifier = new TestModifier();
-        testModifier.modifyTest();
+        new SetupTargetApp().setupTarget();
+        new TestModifier().modifyTest();
     }
 
 }
