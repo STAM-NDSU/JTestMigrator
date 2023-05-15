@@ -1,6 +1,5 @@
 package stam.testmigration.main;
 
-import stam.testmigration.setup.*;
 import stam.testmigration.setup.ConfigCreator;
 import stam.testmigration.setup.ConfigurationRetriever;
 import stam.testmigration.setup.SetupTargetApp;

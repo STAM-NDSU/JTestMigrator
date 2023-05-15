@@ -13,7 +13,6 @@ import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.apache.commons.lang.StringUtils;
 import stam.testmigration.search.CodeSearchResults;
-import smr.testmigration.setup.*;
 import stam.testmigration.setup.CodeCoverageRunner;
 import stam.testmigration.setup.GradleTestFilterUpdater;
 import stam.testmigration.setup.PomTestFilterUpdater;
