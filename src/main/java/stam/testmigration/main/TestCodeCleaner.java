@@ -349,7 +349,7 @@ public class TestCodeCleaner {
             public void visit(FieldDeclaration node, Object arg){
                 super.visit(node, arg);
                 Type nodeType = node.getElementType();
-                if(!nodeType.isPrimitiveType() && !nodeType.isArrayType()){
+                if(!nodeType.isPrimitiveType() && !nodeType.isArrayType() && !nodeType.toString().equals("String")){
                     String type = sanitizeType(node.getElementType().asString());
                     for(VariableDeclarator vd: node.getVariables()){
                         if(targetTypeVar.containsKey(type)){
@@ -364,7 +364,7 @@ public class TestCodeCleaner {
             public void visit(VariableDeclarationExpr expr, Object arg){
                 super.visit(expr, arg);
                 Type exprType = expr.getElementType();
-                if(!exprType.isPrimitiveType() && !exprType.isArrayType()){
+                if(!exprType.isPrimitiveType() && !exprType.isArrayType() && !exprType.toString().equals("String")){
                     String type = sanitizeType(expr.getElementType().asString());
                     for(VariableDeclarator vd: expr.getVariables()){
                         if(targetTypeVar.containsKey(type)){
@@ -380,7 +380,7 @@ public class TestCodeCleaner {
                 super.visit(node, arg);
                 for(Parameter parameter: node.getParameters()){
                     Type paramType = parameter.getType();
-                    if(!paramType.isPrimitiveType() && !paramType.isArrayType()){
+                    if(!paramType.isPrimitiveType() && !paramType.isArrayType() && !paramType.toString().equals("String")){
                         String type = sanitizeType(parameter.getTypeAsString());
                         if(targetTypeVar.containsKey(type)){
                             targetTypeVar.get(type).add(parameter.getNameAsString());
