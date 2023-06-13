@@ -36,6 +36,7 @@ public class MethodMatcher {
     static Map<String, String> targetMethodAndClass = new HashMap<>();
     static Multimap<String, String> sourceTargetClass = ArrayListMultimap.create();
     static ArrayList<MethodCallExpr> helperCallExprs = new ArrayList<>();
+    static ArrayList<MethodCallExpr> javaAPIs = new ArrayList<>();
 
     void matchMethods(CompilationUnit modifiedTestCU) {
         checkParentProjectDir(sourceDir, true);
@@ -441,7 +442,9 @@ public class MethodMatcher {
                 super.visit(callExpr, arg);
                 if(methodsCalledInModifiedTest.contains(callExpr.getNameAsString())){
                     try {
-                        if(!callExpr.resolve().getQualifiedName().startsWith("java") && !callExpr.resolve().getQualifiedName().startsWith("javax")){
+                        if(callExpr.resolve().getQualifiedName().startsWith("java") && !callExpr.resolve().getQualifiedName().startsWith("javax")){
+                            javaAPIs.add(callExpr);
+                        }else{
                             String className = TestModifier.getFileNameOfInnerClass(callExpr.resolve().getClassName());
                             if(!getKeysByValue(methodsCalledInTest, className).contains(callExpr.getNameAsString()) && isNotHelper(className, callExpr)){
                                 MethodDeclaration methodDeclaration = getMethodDeclaration(callExpr, className);

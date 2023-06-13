@@ -331,7 +331,8 @@ public class TestModifier {
                     node.setName(targetTestMethod);
                     storeReplacedMethod(targetTestMethod, callExpr);
                 }else if(MethodMatcher.similarMethods.containsKey(name) && !name.equals(targetTestMethod) && !MethodMatcher.helperCallExprs.contains(callExpr)
-                        && !MethodMatcher.similarMethods.get(name).equals(sourceTestMethod) && !MethodMatcher.similarMethods.get(name).equals(targetTestMethod)){
+                        && !MethodMatcher.similarMethods.get(name).equals(sourceTestMethod) && !MethodMatcher.similarMethods.get(name).equals(targetTestMethod)
+                        && !MethodMatcher.javaAPIs.contains(callExpr)){
                     node.setName(MethodMatcher.similarMethods.get(name));
                     storeReplacedMethod(MethodMatcher.similarMethods.get(name), callExpr);
                     checkStaticMethods(node, name, objectsRequired, cu);
