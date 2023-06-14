@@ -129,7 +129,9 @@ public class MethodMatcher {
                 }
             }
         }
-        checkThresholdAndStoreSimMethods(finalScore, sourceMethod, target, sourceClass, targetFile);
+        if(target != null){
+            checkThresholdAndStoreSimMethods(finalScore, sourceMethod, target, sourceClass, targetFile);
+        }
     }
 
     boolean isJavaFile(File file){
@@ -153,7 +155,7 @@ public class MethodMatcher {
         String targetTestMethod = new CodeSearchResults().getTargetTestMethod();
         String targetClass = FilenameUtils.removeExtension(targetFile.getName());
 
-        if(target != null && finalScore>ConfigurationRetriever.thresholdValue && !targetMethod.equals(targetTestMethod)){
+        if(finalScore>ConfigurationRetriever.thresholdValue && !targetMethod.equals(targetTestMethod)){
             similarMethodDecl.put(sourceMethod, target);
             if(!targetMethodAndClass.containsKey(targetMethod)){
                 targetMethodAndClass.put(targetMethod, targetClass);
