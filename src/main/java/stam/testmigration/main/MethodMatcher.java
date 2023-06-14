@@ -162,7 +162,7 @@ public class MethodMatcher {
             //if the file is in test directory of a different module, copy the file in the test directory of the working module (workaround solution)
             if(!targetFile.getAbsolutePath().startsWith(SetupTargetApp.getTargetDir()) && targetFile.getAbsolutePath().contains("\\src\\test")){
                 copyHelperClass(targetFile);
-                processedHelperClasses.add(FilenameUtils.removeExtension(targetFile.getName()));
+                processedHelperClasses.add(targetClass);
             }
         }
     }
