@@ -148,11 +148,15 @@ public class MethodMatcher {
     }
 
     private void checkThresholdAndStoreSimMethods(double finalScore, MethodDeclaration sourceMethod, MethodDeclaration target, String sourceClass, File targetFile){
-        if(target != null && finalScore>ConfigurationRetriever.thresholdValue && !target.getNameAsString().equals(new CodeSearchResults().getTargetTestMethod())){
+
+        String targetMethod = target.getNameAsString();
+        String targetTestMethod = new CodeSearchResults().getTargetTestMethod();
+        String targetClass = FilenameUtils.removeExtension(targetFile.getName());
+
+        if(target != null && finalScore>ConfigurationRetriever.thresholdValue && !targetMethod.equals(targetTestMethod)){
             similarMethodDecl.put(sourceMethod, target);
-            String targetClass = FilenameUtils.removeExtension(targetFile.getName());
-            if(!targetMethodAndClass.containsKey(target.getNameAsString())){
-                targetMethodAndClass.put(target.getNameAsString(), targetClass);
+            if(!targetMethodAndClass.containsKey(targetMethod)){
+                targetMethodAndClass.put(targetMethod, targetClass);
             }
             sourceTargetClass.put(sourceClass, targetClass);
             //if the file is in test directory of a different module, copy the file in the test directory of the working module (workaround solution)
