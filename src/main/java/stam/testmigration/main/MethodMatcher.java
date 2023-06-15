@@ -58,6 +58,8 @@ public class MethodMatcher {
         LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
 
         for(Map.Entry<MethodDeclaration, String> entry: sourceMethods.entrySet()){
+            if(entry.getKey().getNameAsString().equals(new CodeSearchResults().getSourceTestMethod())
+                    && entry.getValue().equals(new CodeSearchResults().getSourceClassName())) continue;
             calculateSimFilterApproach(ConfigurationRetriever.vec, levenshteinDistance, entry.getKey(), entry.getValue());
         }
     }
@@ -76,6 +78,8 @@ public class MethodMatcher {
                 String name = FilenameUtils.removeExtension(child.getName());
                 try {
                     for(MethodDeclaration targetMethod: getMethodDecls(new JavaParser().parse(child).getResult().get())){
+                        if(targetMethod.getNameAsString().equals(new CodeSearchResults().getTargetTestMethod())
+                                && name.equals(new CodeSearchResults().getTargetClassName())) continue;
                         double score = calculateVecSimilarity(sourceMethod, targetMethod, vec);
                         double vecClassScore = calculateVecSimilarity(sourceClass, name, vec);
                         double levClassScore = calculateLVSim(levenshteinDistance, sourceClass, name);
