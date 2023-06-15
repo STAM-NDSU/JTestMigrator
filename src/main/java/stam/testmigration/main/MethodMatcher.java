@@ -78,8 +78,7 @@ public class MethodMatcher {
                 String name = FilenameUtils.removeExtension(child.getName());
                 try {
                     for(MethodDeclaration targetMethod: getMethodDecls(new JavaParser().parse(child).getResult().get())){
-                        if(targetMethod.getNameAsString().equals(new CodeSearchResults().getTargetTestMethod())
-                                && name.equals(new CodeSearchResults().getTargetClassName())) continue;
+                        if(skipThisTarget(targetMethod, name)) continue;
                         double score = calculateVecSimilarity(sourceMethod, targetMethod, vec);
                         double vecClassScore = calculateVecSimilarity(sourceClass, name, vec);
                         double levClassScore = calculateLVSim(levenshteinDistance, sourceClass, name);
@@ -146,6 +145,22 @@ public class MethodMatcher {
         if(target != null){
             checkThresholdAndStoreSimMethods(finalScore, sourceMethod, target, sourceClass, targetFile);
         }
+    }
+
+    private boolean skipThisTarget(MethodDeclaration targetMethod, String targetClass){
+        return (targetMethod.getNameAsString().equals(new CodeSearchResults().getTargetTestMethod())
+                && targetClass.equals(new CodeSearchResults().getTargetClassName())) || isDeprecated(targetMethod);
+    }
+
+    private boolean isDeprecated(MethodDeclaration targetMethod){
+        boolean exist = false;
+        for(AnnotationExpr expr: targetMethod.getAnnotations()){
+            if(expr.getNameAsString().equals("Deprecated")){
+                exist = true;
+                break;
+            }
+        }
+        return exist;
     }
 
     private void findAnotherTargetForSource(MethodDeclaration targetMethod, Word2Vec vec, LevenshteinDistance levenshteinDistance){
