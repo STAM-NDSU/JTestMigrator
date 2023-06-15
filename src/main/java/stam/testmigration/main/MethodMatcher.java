@@ -37,12 +37,14 @@ public class MethodMatcher {
     static Multimap<String, String> sourceTargetClass = ArrayListMultimap.create();
     static ArrayList<MethodCallExpr> helperCallExprs = new ArrayList<>();
     static ArrayList<MethodCallExpr> javaAPIs = new ArrayList<>();
+    private final Map<MethodDeclaration, Double> targetScore = new HashMap<>();
+    private Map<MethodDeclaration, String> sourceMethods = new HashMap<>();
 
     void matchMethods(CompilationUnit modifiedTestCU) {
         checkParentProjectDir(sourceDir, true);
         checkParentProjectDir(targetDir, false);
 
-        Map<MethodDeclaration, String> sourceMethods= getMethodsCalledInTestClass(modifiedTestCU);
+        sourceMethods= getMethodsCalledInTestClass(modifiedTestCU);
         calculateSimilarity(sourceMethods);
 
         for(Map.Entry<MethodDeclaration, MethodDeclaration> entry: similarMethodDecl.entrySet()){
@@ -77,6 +79,14 @@ public class MethodMatcher {
                         double score = calculateVecSimilarity(sourceMethod, targetMethod, vec);
                         double vecClassScore = calculateVecSimilarity(sourceClass, name, vec);
                         double levClassScore = calculateLVSim(levenshteinDistance, sourceClass, name);
+
+                        if(targetScore.containsKey(targetMethod)){
+                            if(targetScore.get(targetMethod)>=score) {
+                                continue;
+                            }else {
+                                findAnotherTargetForSource(targetMethod, vec, levenshteinDistance);
+                            }
+                        }
 
                         if(sourceClass.equals(new CodeSearchResults().getSourceClassName())
                                 && name.equals(new CodeSearchResults().getTargetClassName()) && score>ConfigurationRetriever.thresholdValue && score>finalScore){
@@ -134,6 +144,20 @@ public class MethodMatcher {
         }
     }
 
+    private void findAnotherTargetForSource(MethodDeclaration targetMethod, Word2Vec vec, LevenshteinDistance levenshteinDistance){
+        MethodDeclaration source = null;
+        for(Map.Entry<MethodDeclaration, MethodDeclaration> entry: similarMethodDecl.entrySet()){
+            if(entry.getValue().equals(targetMethod)) {
+                source = entry.getKey();
+                break;
+            }
+        }
+        if(source != null) {
+            similarMethodDecl.remove(source);
+            calculateSimFilterApproach(vec, levenshteinDistance, source, sourceMethods.get(source));
+        }
+    }
+
     boolean isJavaFile(File file){
         return file.isFile() && FilenameUtils.getExtension(file.getName()).equals("java")
                 && !FilenameUtils.removeExtension(file.getName()).endsWith("Test") && file.getAbsolutePath().contains("\\src\\");
@@ -156,6 +180,7 @@ public class MethodMatcher {
         String targetClass = FilenameUtils.removeExtension(targetFile.getName());
 
         if(finalScore>ConfigurationRetriever.thresholdValue && !targetMethod.equals(targetTestMethod)){
+            targetScore.put(target, finalScore);
             similarMethodDecl.put(sourceMethod, target);
             if(!targetMethodAndClass.containsKey(targetMethod)){
                 targetMethodAndClass.put(targetMethod, targetClass);
