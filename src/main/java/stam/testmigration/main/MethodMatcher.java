@@ -10,6 +10,7 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.symbolsolver.utils.SymbolSolverCollectionStrategy;
 import com.github.javaparser.utils.ProjectRoot;
 import com.github.javaparser.utils.SourceRoot;
@@ -72,7 +73,7 @@ public class MethodMatcher {
         Stack<File> stack = getTargetFilesStack();
         while(!stack.isEmpty()) {
             File child = stack.pop();
-            if (child.isDirectory() && isNotTestDir(child)) {
+            if (child.isDirectory() && !isTestDir(child)) {
                 for(File f : Objects.requireNonNull(child.listFiles())) stack.push(f);
             } else if (isJavaFile(child)) {
                 String name = FilenameUtils.removeExtension(child.getName());
@@ -182,8 +183,8 @@ public class MethodMatcher {
                 && !FilenameUtils.removeExtension(file.getName()).endsWith("Test") && file.getAbsolutePath().contains("\\src\\");
     }
 
-    boolean isNotTestDir(File file){
-        return !file.getAbsolutePath().contains("\\src\\test\\");
+    boolean isTestDir(File file){
+        return file.getAbsolutePath().contains("\\src\\test\\");
     }
 
     Stack<File> getTargetFilesStack(){
@@ -206,7 +207,7 @@ public class MethodMatcher {
             }
             sourceTargetClass.put(sourceClass, targetClass);
             //if the file is in test directory of a different module, copy the file in the test directory of the working module (workaround solution)
-            if(!targetFile.getAbsolutePath().startsWith(SetupTargetApp.getTargetDir()) && targetFile.getAbsolutePath().contains("\\src\\test")){
+            if(!targetFile.getAbsolutePath().startsWith(SetupTargetApp.getTargetDir()) && isTestDir(targetFile)){
                 copyHelperClass(targetFile);
                 processedHelperClasses.add(targetClass);
             }
@@ -492,10 +493,12 @@ public class MethodMatcher {
                 super.visit(callExpr, arg);
                 if(methodsCalledInModifiedTest.contains(callExpr.getNameAsString())){
                     try {
-                        if(callExpr.resolve().getQualifiedName().startsWith("java") && !callExpr.resolve().getQualifiedName().startsWith("javax")){
+                        ResolvedMethodDeclaration expr = callExpr.resolve();
+                        String qualifiedName = expr.getQualifiedName();
+                        if(qualifiedName.startsWith("java") && qualifiedName.startsWith("javax")){
                             javaAPIs.add(callExpr);
                         }else{
-                            String className = TestModifier.getFileNameOfInnerClass(callExpr.resolve().getClassName());
+                            String className = TestModifier.getFileNameOfInnerClass(expr.getClassName());
                             if(!getKeysByValue(methodsCalledInTest, className).contains(callExpr.getNameAsString()) && isNotHelper(className, callExpr)){
                                 MethodDeclaration methodDeclaration = getMethodDeclaration(callExpr, className);
                                 if(methodDeclaration != null){
