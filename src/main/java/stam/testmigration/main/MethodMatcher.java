@@ -495,7 +495,7 @@ public class MethodMatcher {
                     try {
                         ResolvedMethodDeclaration expr = callExpr.resolve();
                         String qualifiedName = expr.getQualifiedName();
-                        if(qualifiedName.startsWith("java") && qualifiedName.startsWith("javax")){
+                        if(qualifiedName.startsWith("java")){
                             javaAPIs.add(callExpr);
                         }else{
                             String className = TestModifier.getFileNameOfInnerClass(expr.getClassName());
