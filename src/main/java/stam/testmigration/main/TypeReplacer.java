@@ -224,7 +224,7 @@ public class TypeReplacer {
                 for(File f : Objects.requireNonNull(child.listFiles())) stack.push(f);
             } else if (methodMatcher.isJavaFile(child) && isUsableFile(child) && !child.getAbsolutePath().contains("src"+File.separator+"test")){
                 String targetClassName = FilenameUtils.removeExtension(child.getName());
-                double vecScore = methodMatcher.calculateVecSimilarity(sourceType, targetClassName, ConfigurationRetriever.vec);
+                double vecScore = methodMatcher.calculateVecSimilarity(sourceType, targetClassName);
                 double levScore = levenshteinDistance.apply(sourceType.toLowerCase(), targetClassName.toLowerCase());
                 if(vecScore > ConfigurationRetriever.thresholdValue && vecScore > simScore){
                     simScore = vecScore;
