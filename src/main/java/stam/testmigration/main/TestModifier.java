@@ -27,14 +27,15 @@ import java.text.NumberFormat;
 import java.util.*;
 
 public class TestModifier {
-    SetupTargetApp setupTargetApp = new SetupTargetApp();
-    CodeSearchResults searchResults = new CodeSearchResults();
     static NodeList<FieldDeclaration> fieldsToAdd = new NodeList<>();
     static Map<String, ArrayList<MethodCallExpr>> replacedMethods = new HashMap<>();
     static ArrayList<String> constructorsInTest = new ArrayList<>();
-    private double firstCoverage, secondCoverage;
+    private double firstCoverage;
 
     void modifyTest() {
+        SetupTargetApp setupTargetApp = new SetupTargetApp();
+        CodeSearchResults searchResults = new CodeSearchResults();
+
         String sourceFileName = searchResults.getSourceFileName();
         String sourceClassName = searchResults.getSourceClassName();
 
@@ -93,8 +94,7 @@ public class TestModifier {
         removeAddedTestFilter();
 
         if(migrationSuccess){
-            secondCoverage = runner.runCodeCoverage(false);
-            handleCoverageResult(false, secondCoverage);
+            handleCoverageResult(false, runner.runCodeCoverage(false));
         }else{
             //Migration fails, no new code coverage.
             System.out.println("Could not calculate code coverage.");
@@ -242,13 +242,13 @@ public class TestModifier {
 
     //replace source package with target package in test class
     void replacePackage(CompilationUnit cu, String fileName) {
-        String packageName = setupTargetApp.getPackageName(fileName, SetupTargetApp.getTargetDir());
+        String packageName = new SetupTargetApp().getPackageName(fileName, SetupTargetApp.getTargetDir());
         cu.setPackageDeclaration(packageName);
     }
 
     //remove imports related to source class from test class
     void removeSourceImports(CompilationUnit cu, String sourceFileName) {
-        String packageName = setupTargetApp.getPackageName(sourceFileName, SetupTargetApp.getSourceDir());
+        String packageName = new SetupTargetApp().getPackageName(sourceFileName, SetupTargetApp.getSourceDir());
         int index = packageName.indexOf(".", packageName.indexOf(".") + 1);
         String packageString = (index == -1) ? packageName : packageName.substring(0, index);
 
@@ -305,7 +305,7 @@ public class TestModifier {
     //get static fields of source class
     NodeList<FieldDeclaration> getStaticFields(String sourceClassName) {
         NodeList<FieldDeclaration> staticSourceFD = new NodeList<>();
-        String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getSourceDir()), getFileNameOfInnerClass(sourceClassName)+".java");
+        String path = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getSourceDir()), getFileNameOfInnerClass(sourceClassName)+".java");
         CompilationUnit cu = SetupTargetApp.getCompilationUnit(new File(path));
         cu.accept(new VoidVisitorAdapter<>() {
             @Override
@@ -583,7 +583,7 @@ public class TestModifier {
     //get all method names called in the target class
     private List<String> getTargetMethods(String targetClassName){
         List<String> targetMethodNames = new ArrayList<>();
-        String targetPath = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), getFileNameOfInnerClass(targetClassName)+".java");
+        String targetPath = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getTargetDir()), getFileNameOfInnerClass(targetClassName)+".java");
         CompilationUnit targetCU = SetupTargetApp.getCompilationUnit(new File(targetPath));
         targetCU.accept(new VoidVisitorAdapter<Object>() {
             @Override
