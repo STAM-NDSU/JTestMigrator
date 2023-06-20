@@ -320,7 +320,7 @@ public class TestCodeCleaner {
     }
 
     private void checkFieldsNotInTarget(CompilationUnit cu){
-        ArrayList<String> wrapperTypes = new ArrayList<>(List.of("Boolean", "Byte", "Short", "Character", "Integer", "Long", "Float", "Double"));
+        ArrayList<String> wrapperTypes = new ArrayList<>(List.of("Boolean", "Byte", "Short", "Character", "Integer", "Long", "Float", "Double", "Math"));
         Map<String, ArrayList<String>> targetTypeVar = getTargetTypeVars(cu);
         ArrayList<String> fieldsFromClasses = new ArrayList<>();
         cu.accept(new VoidVisitorAdapter<Object>() {

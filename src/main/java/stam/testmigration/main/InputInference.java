@@ -365,7 +365,7 @@ public class InputInference {
     private boolean isLiteralNullOrStringLiteral(Expression arg){
         if(arg.isLiteralExpr() || arg.isStringLiteralExpr()){
             return true;
-        }else if(arg.isFieldAccessExpr() && isPrimitiveConstant(arg)){
+        }else if(arg.isFieldAccessExpr() && isJavaConstant(arg.asFieldAccessExpr())){
             return true;
         }else if(arg.isUnaryExpr() && isDigit(arg)){
             return true;
@@ -417,21 +417,14 @@ public class InputInference {
         return true;
     }
 
-    private boolean isPrimitiveConstant(Expression arg){
-        //TODO: convert this into pattern matching
-        ArrayList<String> constantClass = new ArrayList<>(Arrays.asList("Byte", "Short", "Integer", "Long", "Float", "Double", "Thread"));
+    private boolean isJavaConstant(FieldAccessExpr arg){
+        //TODO: convert this into RegEx or check java class constants
+        ArrayList<String> constantClass = new ArrayList<>(Arrays.asList("Byte", "Short", "Integer", "Long", "Float", "Double", "Thread", "Math"));
         ArrayList<String> constantValues = new ArrayList<>(
                 Arrays.asList("BYTES", "MAX_VALUE", "MIN_VALUE", "SIZE", "MAX_EXPONENT", "MIN_EXPONENT", "NaN", "NEGATIVE_INFINITY",
-                        "POSITIVE_INFINITY", "MIN_NORMAL", "MIN_PRIORITY", "MAX_PRIORITY"));
+                        "POSITIVE_INFINITY", "MIN_NORMAL", "MIN_PRIORITY", "MAX_PRIORITY", "PI", "E"));
 
-        String receiver = arg.asFieldAccessExpr().getScope().toString();
-        String field = arg.asFieldAccessExpr().getNameAsString();
-
-        if(constantClass.contains(receiver) && constantValues.contains(field)){
-            return true;
-        }
-
-        return false;
+        return constantClass.contains(arg.getScope().toString()) && constantValues.contains(arg.getNameAsString());
     }
 
     private void selectInputForConstructors(Map<String, List<String>> argForConstructors, Map<String, List<List<String>>> argListConstructors){
