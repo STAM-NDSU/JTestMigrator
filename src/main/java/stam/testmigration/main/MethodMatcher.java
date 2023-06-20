@@ -186,7 +186,8 @@ public class MethodMatcher {
 
     Stack<File> getTargetFilesStack(){
         Stack<File> stack = new Stack<>();
-        stack.push(new File(targetDir));
+        String path = new SetupTargetApp().findFileOrDir(new File(targetDir), new CodeSearchResults().getTargetFileName());
+        stack.push(new File(new File(path).getParent()));
         return stack;
     }
 
