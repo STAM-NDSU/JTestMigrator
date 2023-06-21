@@ -259,18 +259,22 @@ public class InputInference {
 
     private void selectInputForMethods(Map<String, List<String>> argForMethods, Map<String, List<List<String>>> argListMethods){
         for(Map.Entry<String, List<String>> entry: argForMethods.entrySet()){
+            if(entry.getValue().isEmpty()) continue;
+
             NodeList<MethodCallExpr> mCallExprs = getMethodCallExprs(entry.getKey());
+            Map<String, MethodCallExpr> targetToSrcCall = new HashMap<>();
             //if the input value of the same type is used in the existing source method,
             // use the same value in the target method
             Map<String, Integer> multiMethodsSameName = new HashMap<>();
             getMethodNameNumber(multiMethodsSameName, mCallExprs);
             for(MethodCallExpr methodCallExpr: mCallExprs){
+                String methodCallName = methodCallExpr.getNameAsString();
                 //get arg of the source methods
                 ArrayList<Expression> sourceArgList = new ArrayList<>();
                 int lineNum = methodCallExpr.getBegin().get().line;
                 String key = methodCallExpr.toString()+lineNum;
-                if(multiMethodsSameName.get(methodCallExpr.getNameAsString()) == 1){
-                    key = methodCallExpr.getNameAsString()+lineNum;
+                if(multiMethodsSameName.get(methodCallName) == 1){
+                    key = methodCallName+lineNum;
                 }
                 //TODO: methodCallExpr.toString() vs methodCallExpr.getNameAsString()
                 if(!sourceArg.containsKey(key)){
@@ -281,7 +285,7 @@ public class InputInference {
                 }
                 //get the parameter index of the matching source arg in the target method
                 Map<String, Integer> argPosition = new HashMap<>();
-                List<List<String>> argList = argListMethods.get(methodCallExpr.getNameAsString());
+                List<List<String>> argList = argListMethods.get(methodCallName);
                 for(Expression argValue: sourceArgList){
                     for(List<String> potentialArg: argList){
                         if(potentialArg.contains(argValue.toString())){
@@ -298,9 +302,14 @@ public class InputInference {
                     argMethodExpr.replace(argMethodExpr.get(entry1.getValue()), new NameExpr().setName(entry1.getKey()));
                 }
 
-                //if the source method call has literals or null as arguments, keep them in the target method call
-                MethodCallExpr sourceMethodCall = getSourceMethodCall(methodCallExpr);
-                if(matchMethodParamTypes(sourceMethodCall, methodCallExpr.getNameAsString())){
+                MethodCallExpr sourceMethodCall;
+                if(targetToSrcCall.containsKey(methodCallName)){
+                    sourceMethodCall = targetToSrcCall.get(methodCallName);
+                }else{
+                    sourceMethodCall = getSourceMethodCall(methodCallExpr);
+                    targetToSrcCall.put(methodCallName, sourceMethodCall);
+                }
+                if(matchMethodParamTypes(sourceMethodCall, methodCallName)){
                     for(int i=0; i<sourceArgList.size(); i++){
                         if((isLiteralNullOrStringLiteral(sourceArgList.get(i)) || sourceArgList.get(i).isMethodCallExpr()
                                 || sourceArgList.get(i).isObjectCreationExpr() || sourceArgList.get(i).isArrayCreationExpr())){
