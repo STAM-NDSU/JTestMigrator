@@ -130,7 +130,8 @@ public class TestModifier {
             }
         }, null);
 
-        ArrayList<MethodDeclaration> testMethods = filterTestByName(sourceTests, sourceTestMethod);
+        ArrayList<MethodDeclaration> testMethods = new ArrayList<>();
+        if(testsToMigrate.isEmpty()) testMethods = filterTestByName(sourceTests, sourceTestMethod);
         NodeList<MethodDeclaration> notRequiredTests = getNotRequiredTests(testMethods, testNodes, sourceTests);
         removeNotRequiredTests(cu, notRequiredTests);
     }
