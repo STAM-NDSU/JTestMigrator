@@ -36,14 +36,7 @@ public class InputTypeConverter {
                 String varType = variableDeclarator.getTypeAsString();
                 String value = variableDeclarator.getNameAsString();
 
-                if(type.equals("Context") || varType.equals("Context")){
-                    argValues.add("RuntimeEnvironment.application");
-                    addImport("org.robolectric.RuntimeEnvironment", cu);
-                    //FIXME:
-                    // for version 1.x and 2.x: Robolectric.application
-                    // for version 3.x: RuntimeEnvironment.application
-                    // for version 4.x: add testImplementation 'androidx.test:core:1.3.0' in build.gradle and use ApplicationProvider.getApplicationContext()
-                }else if(type.equals("Object") && !varType.contains("[]")){
+                if(type.equals("Object") && !varType.contains("[]")){
                     argValues.add(value);
                 }else if(type.equals("T")){
                     //generics
