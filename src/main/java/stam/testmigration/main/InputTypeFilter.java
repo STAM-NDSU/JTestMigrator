@@ -38,8 +38,7 @@ public class InputTypeFilter {
         //TODO: keep improving the potential type conversion list
         if(targetParamTypes.contains(type)){
             canBeConverted = true;
-        }else if(targetParamTypes.contains("T")){
-            //generic type
+        }else if(containsGenericType(targetParamTypes)){
             canBeConverted = true;
         }else if(targetParamTypes.contains("Object") && !type.contains("[]")){
             ArrayList<String> primitiveTypes = new ArrayList<>(Arrays.asList("int", "long", "double", "float", "short", "char", "byte"));
@@ -103,6 +102,13 @@ public class InputTypeFilter {
             canBeConverted = checkAbstractClass(type, targetParamTypes);
         }
         return canBeConverted;
+    }
+
+    private boolean containsGenericType(List<String> types){
+        for(String type: types){
+            if(type.length()==1 && Character.isUpperCase(type.charAt(0))) return true;
+        }
+        return false;
     }
 
     //get extended types if available

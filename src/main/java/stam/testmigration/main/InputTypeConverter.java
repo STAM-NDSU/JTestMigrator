@@ -38,8 +38,7 @@ public class InputTypeConverter {
 
                 if(type.equals("Object") && !varType.contains("[]")){
                     argValues.add(value);
-                }else if(type.equals("T")){
-                    //generics
+                }else if(isGenericType(type)){
                     argValues.add(value);
                 }else if(type.contains("<T>")){
                     //generic type argument
@@ -139,6 +138,10 @@ public class InputTypeConverter {
         }
         new InputGenerator(cu, methodOrConstructorName, inputList).generateInput();
         return args;
+    }
+
+    private boolean isGenericType(String type){
+        return (type.length() == 1 && Character.isUpperCase(type.charAt(0)));
     }
 
     //Convertible File types
