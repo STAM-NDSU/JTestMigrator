@@ -6,6 +6,9 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import stam.testmigration.setup.SetupTargetApp;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class CodeSearchResults {
     //TODO: populate values automatically
@@ -13,6 +16,7 @@ public class CodeSearchResults {
     private static String sourceFileName, sourceTestMethod;
     private static String targetFileName, targetTestMethod;
     private static String targetTestFileName, testFileName;
+    private static String[] testsToMigrate;
 
     public String getSourceFileName() {
         long dotCount = sourceFileName.chars().filter(ch -> ch == '.').count();
@@ -93,5 +97,16 @@ public class CodeSearchResults {
 
     public static void setTargetTestFileName(String targetTestFileName) {
         CodeSearchResults.targetTestFileName = targetTestFileName;
+    }
+
+    public static void setTestsToMigrate(String testNames){
+        if(!testNames.isEmpty()){
+            testsToMigrate = testNames.split(";");
+        }
+    }
+
+    public static List<String> getTestsToMigrate(){
+        if(testsToMigrate == null) return new ArrayList<>();
+        return Arrays.asList(testsToMigrate);
     }
 }

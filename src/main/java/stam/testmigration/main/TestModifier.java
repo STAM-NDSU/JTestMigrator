@@ -103,8 +103,9 @@ public class TestModifier {
 
     //remove test methods that are not intended to be tested
     private void removeUnrelatedTests(CompilationUnit cu, String sourceTestMethod) {
-        NodeList<MethodDeclaration> mdTestNodes = new NodeList<>();
-        NodeList<MethodDeclaration> mdSourceNodes = new NodeList<>();
+        NodeList<MethodDeclaration> testNodes = new NodeList<>();
+        NodeList<MethodDeclaration> sourceTests = new NodeList<>();
+        List<String> testsToMigrate = CodeSearchResults.getTestsToMigrate();
         ArrayList<String> helperTargetTestMethods = getHelperWithSourceTestMethodCall(cu, sourceTestMethod);
         cu.accept(new VoidVisitorAdapter<Object>() {
             @Override
@@ -112,19 +113,25 @@ public class TestModifier {
                 super.visit(node, arg);
                 //filter test methods
                 if(isTestMethod(node)) {
-                    mdTestNodes.add(node);
-                    //take the test if the name matches exactly
-                    if(getName(node.getNameAsString()).equals(getSourceTestName(sourceTestMethod)) && !mdSourceNodes.contains(node)){
-                        mdSourceNodes.add(node);
-                    }else{
-                        checkMethodCallInTest(node, sourceTestMethod, helperTargetTestMethods, mdSourceNodes);
+                    testNodes.add(node);
+                    String testName = node.getNameAsString();
+                    if(testsToMigrate.isEmpty()){
+                        //tool finds tests to migrate
+                        if(getName(testName).equals(getSourceTestName(sourceTestMethod)) && !sourceTests.contains(node)){
+                            sourceTests.add(node);
+                        }else{
+                            checkMethodCallInTest(node, sourceTestMethod, helperTargetTestMethods, sourceTests);
+                        }
+                    }else if(testsToMigrate.contains(testName)){
+                        //users have manually identified tests to migrate
+                        sourceTests.add(node);
                     }
                 }
             }
         }, null);
 
-        ArrayList<MethodDeclaration> testMethods = filterTestByName(mdSourceNodes, sourceTestMethod);
-        NodeList<MethodDeclaration> notRequiredTests = getNotRequiredTests(testMethods, mdTestNodes, mdSourceNodes);
+        ArrayList<MethodDeclaration> testMethods = filterTestByName(sourceTests, sourceTestMethod);
+        NodeList<MethodDeclaration> notRequiredTests = getNotRequiredTests(testMethods, testNodes, sourceTests);
         removeNotRequiredTests(cu, notRequiredTests);
     }
 

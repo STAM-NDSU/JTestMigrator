@@ -24,7 +24,8 @@ public class ConfigurationRetriever {
             prop.load(input);
 
             CodeSearchResults.setSourceFileName(prop.getProperty("sourceClass")+".java");
-            CodeSearchResults.setTestFileName(prop.getProperty("sourceTest")+".java");
+            CodeSearchResults.setTestFileName(prop.getProperty("sourceTestClass")+".java");
+            CodeSearchResults.setTestsToMigrate(prop.getProperty("testsToMigrate"));
             CodeSearchResults.setSourceTestMethod(prop.getProperty("sourceMethod"));
             CodeSearchResults.setTargetFileName(prop.getProperty("targetClass")+".java");
             CodeSearchResults.setTargetTestMethod(prop.getProperty("targetMethod"));
