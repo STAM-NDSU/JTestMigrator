@@ -28,8 +28,6 @@ public class InputTypeFilter {
                 }
             });
         }
-        if(targetParamTypes.contains("Context"))
-            filteredInputs.add(new VariableDeclarator().setType("Context").setName("context"));
         return filteredInputs;
     }
 
