@@ -220,24 +220,31 @@ public class TestCodeCleaner {
     }
 
     private void removeDeadMethods(CompilationUnit cu){
-        ArrayList<MethodDeclaration> methodDeclarations = new ArrayList<>();
-        getHelperMethodsInTestClass(cu, methodDeclarations);
+        Map<MethodDeclaration, String> helperMethods = getHelperMethodsInTestClass(cu);
 
-        ArrayList<MethodDeclaration> methodsCalled = new ArrayList<>();
-        for(MethodDeclaration helperMethod: methodDeclarations){
-            cu.accept(new VoidVisitorAdapter<Object>() {
-                @Override
-                public void visit(MethodCallExpr callExpr, Object arg){
-                    super.visit(callExpr, arg);
-                    if(callExpr.getNameAsString().equals(helperMethod.getNameAsString()) && !methodsCalled.contains(helperMethod)){
-                        methodsCalled.add(helperMethod);
+        HashSet<MethodDeclaration> methodsCalled = new HashSet<>();
+        cu.accept(new VoidVisitorAdapter<Object>() {
+            @Override
+            public void visit(MethodDeclaration declaration, Object arg){
+                super.visit(declaration, arg);
+                String name = declaration.getNameAsString();
+                declaration.accept(new VoidVisitorAdapter<Object>() {
+                    @Override
+                    public void visit(MethodCallExpr callExpr, Object arg){
+                        super.visit(callExpr, arg);
+                        String callName = callExpr.getNameAsString();
+                        if(callExpr.getScope().isEmpty() && helperMethods.containsValue(callName) && !name.equals(callName)){
+                            for(Map.Entry<MethodDeclaration, String> set: helperMethods.entrySet()){
+                                if(set.getValue().equals(callName)) methodsCalled.add(set.getKey());
+                            }
+                        }
                     }
-                }
-            }, null);
-        }
+                }, null);
+            }
+        }, null);
 
         ArrayList<MethodDeclaration> methodsNotCalled = new ArrayList<>();
-        for(MethodDeclaration helperMethod: methodDeclarations){
+        for(MethodDeclaration helperMethod: helperMethods.keySet()){
             if(!methodsCalled.contains(helperMethod)){
                 methodsNotCalled.add(helperMethod);
             }
@@ -250,18 +257,21 @@ public class TestCodeCleaner {
                 methodsNotCalled.forEach(member::remove);
             }
         });
+        if(!methodsNotCalled.isEmpty()) removeDeadMethods(cu);
     }
 
-    private void getHelperMethodsInTestClass(CompilationUnit cu, ArrayList<MethodDeclaration> methodDeclarations){
+    private Map<MethodDeclaration, String> getHelperMethodsInTestClass(CompilationUnit cu){
+        Map<MethodDeclaration, String> helperMethods = new HashMap<>();
         cu.accept(new VoidVisitorAdapter<Object>() {
             @Override
             public void visit(MethodDeclaration node, Object arg){
                 super.visit(node, arg);
                 if(!isTestMethod(node) && !node.getNameAsString().equals("setUp") && !node.getNameAsString().equals("tearDown")){
-                    methodDeclarations.add(node);
+                    helperMethods.put(node, node.getNameAsString());
                 }
             }
         }, null);
+        return helperMethods;
     }
 
     private boolean isTestMethod(MethodDeclaration node){
