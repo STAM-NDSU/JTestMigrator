@@ -309,7 +309,15 @@ public class InputInference {
                     sourceMethodCall = getSourceMethodCall(methodCallExpr);
                     targetToSrcCall.put(methodCallName, sourceMethodCall);
                 }
-                if(matchMethodParamTypes(sourceMethodCall, methodCallName)){
+
+                List<String> sourceParamTypes = getSourceMethodParamTypes(sourceMethodCall);
+                ArrayList<String> targetParamTypes = new ArrayList<>();
+                getTargetMethodParams(getTargetCU(), methodCallName).forEach( parameter -> targetParamTypes.add(parameter.getTypeAsString()));
+
+                //keep the source arguments if params completely match
+                if(sameParamTypes(sourceParamTypes, targetParamTypes)) continue;
+
+                if(matchParamTypes(sourceParamTypes, targetParamTypes)){
                     for(int i=0; i<sourceArgList.size(); i++){
                         if((isLiteralNullOrStringLiteral(sourceArgList.get(i)) || sourceArgList.get(i).isMethodCallExpr()
                                 || sourceArgList.get(i).isObjectCreationExpr() || sourceArgList.get(i).isArrayCreationExpr())){
@@ -324,6 +332,27 @@ public class InputInference {
                 methodCallExpr.setArguments(argMethodExpr);
             }
         }
+    }
+
+    private boolean sameParamTypes(List<String> sourceTypes, List<String> targetTypes){
+        if(sourceTypes.size() == targetTypes.size()){
+            for(String type: sourceTypes){
+                if(!targetTypes.contains(type)) return false;
+            }
+        }
+        return true;
+    }
+
+    private List<String> getSourceMethodParamTypes(MethodCallExpr sourceMethodCall){
+        List<String> sourceParamTypes = new ArrayList<>();
+        if(sourceMethodCall != null){
+            if(MethodCallResolver.sourceParamTypes.containsKey(sourceMethodCall)){
+                sourceParamTypes.addAll(MethodCallResolver.sourceParamTypes.get(sourceMethodCall));
+            }else{
+                sourceParamTypes.addAll(getParams(getSourceCU(), sourceMethodCall.getNameAsString(), sourceMethodCall.getArguments().size()));
+            }
+        }
+        return sourceParamTypes;
     }
 
     private MethodCallExpr getSourceMethodCall(MethodCallExpr targetMethodCallExpr){
@@ -823,22 +852,6 @@ public class InputInference {
         return matchParamTypes(new ConstructorMapper().getParamTypes(source), new ConstructorMapper().getParamTypes(target));
     }
 
-    private boolean matchMethodParamTypes(MethodCallExpr sourceMethodCall, String targetMethodName) {
-        ArrayList<String> sourceParamTypes = new ArrayList<>();
-        if(sourceMethodCall != null){
-            if(MethodCallResolver.sourceParamTypes.containsKey(sourceMethodCall)){
-                sourceParamTypes.addAll(MethodCallResolver.sourceParamTypes.get(sourceMethodCall));
-            }else{
-                sourceParamTypes.addAll(getParams(getSourceCU(), sourceMethodCall.getNameAsString(), sourceMethodCall.getArguments().size()));
-            }
-        }
-
-        ArrayList<String> targetParamTypes = new ArrayList<>();
-        getTargetMethodParams(getTargetCU(), targetMethodName).forEach( parameter -> targetParamTypes.add(parameter.getTypeAsString()));
-
-        return matchParamTypes(sourceParamTypes, targetParamTypes);
-    }
-
     private CompilationUnit getSourceCU(){
         String sourcePath = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getSourceDir()), TestModifier.getFileNameOfInnerClass(sourceClassName)+".java");
         return SetupTargetApp.getCompilationUnit(new File(sourcePath));
@@ -849,7 +862,7 @@ public class InputInference {
         return SetupTargetApp.getCompilationUnit(new File(path));
     }
 
-    private boolean matchParamTypes(ArrayList<String> sourceParamTypes, ArrayList<String> targetParamTypes){
+    private boolean matchParamTypes(List<String> sourceParamTypes, ArrayList<String> targetParamTypes){
         if(!sourceParamTypes.isEmpty() && targetParamTypes.isEmpty()){
             return false;
         }
