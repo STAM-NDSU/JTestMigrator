@@ -299,7 +299,12 @@ public class TestCodeCleaner {
     }
 
     private void removeExtendedTypes(CompilationUnit cu){
-        Utilities.getExtendedTypes(cu).forEach(cu.getType(0)::remove);
+        NodeList<ClassOrInterfaceType> types = new NodeList<>();
+        for(ClassOrInterfaceType classType : Utilities.getExtendedTypes(cu)){
+            String path = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getSourceDir()), classType+".java");
+            if(path!=null) types.add(classType);
+        }
+        types.forEach(cu.getType(0)::remove);
     }
 
     private void removeExplicitWrapperMethods(CompilationUnit cu){
