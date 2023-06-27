@@ -30,10 +30,8 @@ public class ClassObjectModifier {
         this.targetTestMethod = targetTestMethod;
     }
 
-    //replace source class type with target class type in class field declaration
     void replaceClass() {
         cu.accept(new VoidVisitorAdapter<>() {
-            //replace source class (declared as a field) with target class in test method
             @Override
             public void visit(FieldDeclaration node, Object arg) {
                 super.visit(node, arg);
@@ -74,8 +72,28 @@ public class ClassObjectModifier {
                     replaceVarType(declarator, Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(nodeType)));
                 }
             }
+
+            @Override
+            public void visit(MethodReferenceExpr expr, Object arg){
+                super.visit(expr, arg);
+                String nodeType = sanitizeNodeType(expr.getScope().toString());
+                if(nodeType.equals(sourceClassName)){
+                    replaceReferenceType(expr, targetClassName);
+                }else if(MethodMatcher.sourceTargetClass.containsKey(nodeType)){
+                    replaceReferenceType(expr, Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(nodeType)));
+                }
+            }
         }, null);
         replaceStaticRef();
+    }
+
+    private void replaceReferenceType(MethodReferenceExpr expr, String targetType){
+        String typeArgument = checkAndGetTypeArgument(expr.getScope().toString(), targetType);
+        if(typeArgument != null){
+            expr.setScope(new NameExpr().setName(targetType+typeArgument));
+        }else{
+            expr.setScope(new NameExpr().setName(targetType));
+        }
     }
 
     private void replaceFieldType(FieldDeclaration node, String targetType){
