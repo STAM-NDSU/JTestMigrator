@@ -8,6 +8,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.apache.commons.lang.StringUtils;
@@ -289,11 +290,16 @@ public class TestCodeCleaner {
     }
 
     public void cleanUnusedCode(CompilationUnit cu){
+        removeExtendedTypes(cu);
         removeDeadFields(cu);
         removeDeadInnerClasses(cu);
         checkFieldsNotInTarget(cu);
         removeFloatingComments(cu);
         removeExplicitWrapperMethods(cu);
+    }
+
+    private void removeExtendedTypes(CompilationUnit cu){
+        Utilities.getExtendedTypes(cu).forEach(cu.getType(0)::remove);
     }
 
     private void removeExplicitWrapperMethods(CompilationUnit cu){

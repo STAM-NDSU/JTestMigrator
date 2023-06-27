@@ -610,13 +610,7 @@ public class MethodMatcher {
     //get methods from inherited classes
     ArrayList<MethodDeclaration> getMethodsFromExtendedClass(CompilationUnit cu){
         ArrayList<MethodDeclaration> methods = new ArrayList<>();
-
-        NodeList<ClassOrInterfaceType> extendedTypes = new NodeList<>();
-        if(cu.getTypes().isNonEmpty() && cu.getType(0).isClassOrInterfaceDeclaration()){
-            extendedTypes.addAll(cu.getType(0).asClassOrInterfaceDeclaration().getExtendedTypes());
-        }
-
-        for(ClassOrInterfaceType classType : extendedTypes){
+        for(ClassOrInterfaceType classType : Utilities.getExtendedTypes(cu)){
             String path = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getTargetDir()), classType+".java");
             if(path != null){
                 CompilationUnit targetCU = SetupTargetApp.getCompilationUnit(new File(path));
