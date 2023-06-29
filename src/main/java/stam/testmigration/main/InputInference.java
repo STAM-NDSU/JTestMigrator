@@ -874,7 +874,7 @@ public class InputInference {
                     sourceType = sourceType.substring(0, sourceType.length()-2);
                     targetType = targetType.substring(0, targetType.length()-2);
                 }
-                boolean convertible = new InputTypeFilter().toTargetTypes(sourceType, new ArrayList<>(Collections.singletonList(targetType)));
+                boolean convertible = new InputTypeFilter().compatibleTypeExists(sourceType, new ArrayList<>(Collections.singletonList(targetType)));
                 if(!sourceType.equals(targetType) && !isSubClass(targetType) && !convertible){
                     return false;
                 }

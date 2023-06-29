@@ -72,7 +72,7 @@ public class ConstructorMapper {
             ArrayList<String> sourceParams = getParamTypes(source);
             ArrayList<String> targetParams = getParamTypes(target);
             for(int i=0; i<sourceParams.size(); i++){
-                if(!new InputTypeFilter().toTargetTypes(sourceParams.get(0), new ArrayList<>(List.of(targetParams.get(0))))){
+                if(!new InputTypeFilter().compatibleTypeExists(sourceParams.get(0), new ArrayList<>(List.of(targetParams.get(0))))){
                     return false;
                 }
             }

@@ -22,7 +22,7 @@ public class InputTypeFilter {
         if(!targetParamTypes.isEmpty()){
             potentialVars.forEach(var -> {
                 for(String varType : getType(var)){
-                    if(toTargetTypes(varType, targetParamTypes)){
+                    if(compatibleTypeExists(varType, targetParamTypes)){
                         filteredInputs.add(var);
                     }
                 }
@@ -32,76 +32,57 @@ public class InputTypeFilter {
     }
 
     //check if the potential variable can be converted to one of the target param types
-    boolean toTargetTypes(String type, List<String> targetParamTypes){
-        boolean canBeConverted = false;
-        String path = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getTargetDir()), type+".java");
-        //TODO: keep improving the potential type conversion list
-        if(targetParamTypes.contains(type)){
-            canBeConverted = true;
-        }else if(containsGenericType(targetParamTypes)){
-            canBeConverted = true;
+    boolean compatibleTypeExists(String type, List<String> targetParamTypes){
+        if(targetParamTypes.contains(type) || containsGenericType(targetParamTypes)){
+            return true;
         }else if(targetParamTypes.contains("Object") && !type.contains("[]")){
             ArrayList<String> primitiveTypes = new ArrayList<>(Arrays.asList("int", "long", "double", "float", "short", "char", "byte"));
-            if(!primitiveTypes.contains(type)){
-                canBeConverted = true;
-            }
+            if(!primitiveTypes.contains(type)) return true;
         }else if(targetParamTypes.contains("Writer")){
             ArrayList<String> writerTypes = new ArrayList<>(Arrays.asList("BufferedWriter", "CharArrayWriter", "FilterWriter", "OutputStreamWriter", "PipedWriter", "PrintWriter", "StringWriter"));
-            if(writerTypes.contains(type)){
-                canBeConverted = true;
-            }
+            if(writerTypes.contains(type)) return true;
         }else if(type.contains("[]") && targetParamTypes.contains("T[]")){
             ArrayList<String> primitiveArrays = new ArrayList<>(Arrays.asList("int[]", "long[]", "double[]", "float[]", "short[]", "char[]", "byte[]", "boolean[]"));
-            if(!primitiveArrays.contains(type)){
-                canBeConverted = true;
-            }
-        }else if(type.equals("File")){
-            if(targetParamTypes.contains("FileInputStream") || targetParamTypes.contains("FileOutputStream") ||
-                    targetParamTypes.contains("String") || targetParamTypes.contains("BufferedInputStream") ||
-                    targetParamTypes.contains("BufferedOutputStream") || targetParamTypes.contains("ReadableByteChannel")
-                    || targetParamTypes.contains("WritableByteChannel"))
-                canBeConverted = true;
-        }else if(type.equals("int")){
-            if(targetParamTypes.contains("Integer") || targetParamTypes.contains("long") || targetParamTypes.contains("double")
-            || targetParamTypes.contains("float"))
-                canBeConverted = true;
-        }else if(type.equals("int[]")){
-            if(targetParamTypes.contains("int") || targetParamTypes.contains("Integer"))
-                canBeConverted = true;
-        }else if(type.equals("byte[]")){
-            if(targetParamTypes.contains("byte"))
-                canBeConverted = true;
+            if(!primitiveArrays.contains(type)) return true;
+        }else if(type.equals("File") && (targetParamTypes.contains("FileInputStream") || targetParamTypes.contains("FileOutputStream")
+                || targetParamTypes.contains("String") || targetParamTypes.contains("BufferedInputStream") || targetParamTypes.contains("BufferedOutputStream")
+                || targetParamTypes.contains("ReadableByteChannel") || targetParamTypes.contains("WritableByteChannel"))){
+            return true;
+        }else if(type.equals("int") && (targetParamTypes.contains("Integer") || targetParamTypes.contains("long")
+                || targetParamTypes.contains("double") || targetParamTypes.contains("float"))){
+            return true;
+        }else if(type.equals("int[]") && (targetParamTypes.contains("int") || targetParamTypes.contains("Integer"))){
+            return true;
+        }else if(type.equals("byte[]") && targetParamTypes.contains("byte")){
+            return true;
         }else if((type.equals("byte") || type.equals("short")) && (targetParamTypes.contains("int"))){
-            canBeConverted = true;
+            return true;
         }else if(type.contains("<") && type.contains(">")){
-            canBeConverted = checkIterable(type, targetParamTypes);
+            if(checkIterable(type, targetParamTypes)) return true;
             //replace type argument with T
             String typeArgument = type.substring(type.lastIndexOf("<")+1, type.indexOf(">"));
             type = type.replace(typeArgument, "T");
-            if(targetParamTypes.contains(type)){
-                canBeConverted = true;
-            }
+            if(targetParamTypes.contains(type)) return true;
+
             type = type.substring(0, type.indexOf("<"));
             for(String targetType: targetParamTypes){
-                if(targetType.contains("<") && type.equals(targetType.substring(0, targetType.indexOf("<")))){
-                    canBeConverted = true;
-                    break;
-                }
+                if(targetType.contains("<") && type.equals(targetType.substring(0, targetType.indexOf("<")))) return true;
             }
         }else if(type.equals("CharSequence") && targetParamTypes.contains("String")){
-            canBeConverted = true;
+            return true;
         }else if(type.equals("Object")){
-            canBeConverted = true;
+            return true;
         }else if(type.equals("Number") && targetParamTypes.contains("Object")){
-            canBeConverted = true;
+            return true;
         }else if(type.equals("BigInteger") && targetParamTypes.contains("Number")){
-            canBeConverted = true;
+            return true;
         }else if(type.equals("BigDecimal") && targetParamTypes.contains("Number")){
-            canBeConverted = true;
-        }else if(path != null){
-            canBeConverted = checkAbstractClass(type, targetParamTypes);
+            return true;
+        }else{
+            String path = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getTargetDir()), type+".java");
+            if(path != null) return checkAbstractClass(path, type, targetParamTypes);
         }
-        return canBeConverted;
+        return false;
     }
 
     private boolean containsGenericType(List<String> types){
@@ -139,26 +120,22 @@ public class InputTypeFilter {
         return types;
     }
 
-    private boolean checkAbstractClass(String concreteType, List<String> tagetParams){
-        String path = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getTargetDir()), concreteType+".java");
+    private boolean checkAbstractClass(String path, String concreteType, List<String> tagetParams){
         final boolean[] convertible = {false};
-        if(path != null){
-            CompilationUnit cUnit = SetupTargetApp.getCompilationUnit(new File(path));
-            cUnit.accept(new VoidVisitorAdapter<Object>() {
-                @Override
-                public void visit(ClassOrInterfaceDeclaration node, Object arg){
-                    super.visit(node, arg);
-                    if(node.getNameAsString().equals(concreteType)){
-                        for(ClassOrInterfaceType type: node.getImplementedTypes()){
-                            if(tagetParams.contains(type.getNameAsString())){
-                                concreteClasses.put(concreteType, type.getNameAsString());
-                                convertible[0] = true;
-                            }
+        SetupTargetApp.getCompilationUnit(new File(path)).accept(new VoidVisitorAdapter<Object>() {
+            @Override
+            public void visit(ClassOrInterfaceDeclaration node, Object arg){
+                super.visit(node, arg);
+                if(node.getNameAsString().equals(concreteType)){
+                    for(ClassOrInterfaceType type: node.getImplementedTypes()){
+                        if(tagetParams.contains(type.getNameAsString())){
+                            concreteClasses.put(concreteType, type.getNameAsString());
+                            convertible[0] = true;
                         }
                     }
                 }
-            }, null);
-        }
+            }
+        }, null);
         return convertible[0];
     }
 
@@ -176,9 +153,7 @@ public class InputTypeFilter {
         if(iterables.contains(type)){
             //at least one target type is iterable
             for(String targetParam: iterablesInTarget){
-                if(iterables.contains(targetParam)){
-                    return true;
-                }
+                if(iterables.contains(targetParam)) return true;
             }
         }
         return false;
