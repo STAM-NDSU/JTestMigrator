@@ -248,7 +248,9 @@ public class MethodMatcher {
             }
             totalScore += score;
         }
-        return totalScore/sourceWords.size();
+        double vecScore = totalScore/sourceWords.size();
+        double typeScore = getTypeSimilarityScore(sourceMethod, targetMethod);
+        return (vecScore*0.6)+(typeScore*0.4);
     }
 
     double calculateVecSimilarity(String sourceMethod, String targetMethod){
@@ -293,16 +295,10 @@ public class MethodMatcher {
         }else{
             maxLength = targetMethod.getNameAsString().length();
         }
-        double returnScore = 0.0;
-        String sourceReturnType = getReturnType(sourceMethod);
-        String targetReturnType = getReturnType(targetMethod);
-        if(sourceReturnType.equals(targetReturnType))
-            returnScore = 1.0;
-
-        double paramScore = getParamSimilarityScore(sourceMethod, targetMethod);
 
         double distance = 1 - ((double) new LevenshteinDistance().apply(sourceMethodName, targetMethodName)/maxLength);
-        return  (distance*0.8)+(returnScore*0.1)+(paramScore*0.1);
+        double typeScore = getTypeSimilarityScore(sourceMethod, targetMethod);
+        return  (distance*0.6)+(typeScore*0.4);
     }
 
     double calculateLVSim(String sourceClass, String targetClass){
@@ -333,41 +329,29 @@ public class MethodMatcher {
         return  1 - ((double) new LevenshteinDistance().apply(sourceClassName, targetClassName)/maxLength);
     }
 
-    private double getParamSimilarityScore(MethodDeclaration sourceMethod, MethodDeclaration targetMethod){
-        double paramScore;
+    private double getTypeSimilarityScore(MethodDeclaration sourceMethod, MethodDeclaration targetMethod){
         ArrayList<String> sourceParams = getParams(sourceMethod);
         ArrayList<String> targetParams = getParams(targetMethod);
-
-        if(sourceParams.isEmpty() && targetParams.isEmpty()){
-            paramScore = 1.0;
-        }else{
+        double score = 0;
+        if(sourceParams.isEmpty() && targetParams.isEmpty()) return 1.0;
+        if(sourceParams.size() == targetParams.size()){
             //divide equal weight among parameters
-            double matchCount = 0;
-            if(sourceParams.size() == targetParams.size() || sourceParams.size()>targetParams.size()){
-                for(String type: targetParams){
-                    if(sourceParams.contains(type)){
-                        matchCount++;
-                    }
-                }
-                paramScore = matchCount/sourceParams.size();
-            }else{
-                for(String type: sourceParams){
-                    if(targetParams.contains(type)){
-                        matchCount++;
-                    }
-                }
-                paramScore = matchCount/targetParams.size();
+            for(int i=0; i<sourceParams.size(); i++){
+                String sourceParam = sourceParams.get(i);
+                String targetParam = targetParams.get(i);
+                if(sourceParam.equals(targetParam)
+                        || new InputTypeFilter().compatibleTypeExists(sourceParam, new ArrayList<>(Collections.singleton(targetParam)))) score++;
             }
+            return score/(sourceParams.size());
         }
-        return paramScore;
+        return score;
     }
 
     private ArrayList<String> getParams(MethodDeclaration node){
         ArrayList<String> params = new ArrayList<>();
         for(Parameter parameter: node.getParameters()){
             String type = parameter.getTypeAsString();
-            if(type.contains("Set") || type.contains("List") || type.contains("Map") || type.contains("Vector"))
-                type = "Collection";
+            if(type.contains("Set") || type.contains("List") || type.contains("Map") || type.contains("Vector")) type = "Collection";
             params.add(type);
         }
         return params;
@@ -375,8 +359,7 @@ public class MethodMatcher {
 
     private String getReturnType(MethodDeclaration node){
         String type = node.getTypeAsString();
-        if(type.contains("Set") || type.contains("List") || type.contains("Map") || type.contains("Vector"))
-            type = "Collection";
+        if(type.contains("Set") || type.contains("List") || type.contains("Map") || type.contains("Vector")) type = "Collection";
         return type;
     }
 
@@ -502,7 +485,7 @@ public class MethodMatcher {
                                 }
                             }
                         }
-                    }catch(RuntimeException ignored){}
+                    }catch(RuntimeException re){ javaAPIs.add(callExpr); }
                 }
             }
         }, null);
