@@ -33,17 +33,18 @@ public class InputTypeFilter {
 
     //check if the potential variable can be converted to one of the target param types
     boolean compatibleTypeExists(String type, List<String> targetParamTypes){
+        ArrayList<String> primitiveTypes = new ArrayList<>(Arrays.asList("int", "long", "double", "float", "short", "char", "byte", "boolean"));
+        ArrayList<String> primitiveArrays = new ArrayList<>(Arrays.asList("int[]", "long[]", "double[]", "float[]", "short[]", "char[]", "byte[]", "boolean[]"));
+        ArrayList<String> writerTypes = new ArrayList<>(Arrays.asList("BufferedWriter", "CharArrayWriter", "FilterWriter", "OutputStreamWriter", "PipedWriter", "PrintWriter", "StringWriter"));
+
         if(targetParamTypes.contains(type) || containsGenericType(targetParamTypes)){
             return true;
-        }else if(targetParamTypes.contains("Object") && !type.contains("[]")){
-            ArrayList<String> primitiveTypes = new ArrayList<>(Arrays.asList("int", "long", "double", "float", "short", "char", "byte"));
-            if(!primitiveTypes.contains(type)) return true;
-        }else if(targetParamTypes.contains("Writer")){
-            ArrayList<String> writerTypes = new ArrayList<>(Arrays.asList("BufferedWriter", "CharArrayWriter", "FilterWriter", "OutputStreamWriter", "PipedWriter", "PrintWriter", "StringWriter"));
-            if(writerTypes.contains(type)) return true;
-        }else if(type.contains("[]") && targetParamTypes.contains("T[]")){
-            ArrayList<String> primitiveArrays = new ArrayList<>(Arrays.asList("int[]", "long[]", "double[]", "float[]", "short[]", "char[]", "byte[]", "boolean[]"));
-            if(!primitiveArrays.contains(type)) return true;
+        }else if(targetParamTypes.contains("Object") && !type.contains("[]") && !primitiveTypes.contains(type)){
+            return true;
+        }else if(targetParamTypes.contains("Writer") && writerTypes.contains(type)){
+            return true;
+        }else if(type.contains("[]") && targetParamTypes.contains("T[]") && !primitiveArrays.contains(type)){
+            return true;
         }else if(type.equals("File") && (targetParamTypes.contains("FileInputStream") || targetParamTypes.contains("FileOutputStream")
                 || targetParamTypes.contains("String") || targetParamTypes.contains("BufferedInputStream") || targetParamTypes.contains("BufferedOutputStream")
                 || targetParamTypes.contains("ReadableByteChannel") || targetParamTypes.contains("WritableByteChannel"))){
@@ -71,7 +72,11 @@ public class InputTypeFilter {
         }else if(type.equals("CharSequence") && targetParamTypes.contains("String")){
             return true;
         }else if(type.equals("Object")){
-            return true;
+            if(targetParamTypes.size()>1){
+                return true;
+            }else if(targetParamTypes.size()==1 && !primitiveTypes.contains(targetParamTypes.get(0))){
+                return true;
+            };
         }else if(type.equals("Number") && targetParamTypes.contains("Object")){
             return true;
         }else if(type.equals("BigInteger") && targetParamTypes.contains("Number")){
