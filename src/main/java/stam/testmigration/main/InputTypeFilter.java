@@ -33,13 +33,12 @@ public class InputTypeFilter {
 
     //check if the potential variable can be converted to one of the target param types
     boolean compatibleTypeExists(String type, List<String> targetParamTypes){
-        ArrayList<String> primitiveTypes = new ArrayList<>(Arrays.asList("int", "long", "double", "float", "short", "char", "byte", "boolean"));
         ArrayList<String> primitiveArrays = new ArrayList<>(Arrays.asList("int[]", "long[]", "double[]", "float[]", "short[]", "char[]", "byte[]", "boolean[]"));
         ArrayList<String> writerTypes = new ArrayList<>(Arrays.asList("BufferedWriter", "CharArrayWriter", "FilterWriter", "OutputStreamWriter", "PipedWriter", "PrintWriter", "StringWriter"));
 
         if(targetParamTypes.contains(type) || containsGenericType(targetParamTypes)){
             return true;
-        }else if(targetParamTypes.contains("Object") && !type.contains("[]") && !primitiveTypes.contains(type)){
+        }else if(targetParamTypes.contains("Object") && !type.contains("[]")){
             return true;
         }else if(targetParamTypes.contains("Writer") && writerTypes.contains(type)){
             return true;
@@ -74,11 +73,9 @@ public class InputTypeFilter {
         }else if(type.equals("Object")){
             if(targetParamTypes.size()>1){
                 return true;
-            }else if(targetParamTypes.size()==1 && !primitiveTypes.contains(targetParamTypes.get(0))){
+            }else if(targetParamTypes.size()==1 && !targetParamTypes.get(0).contains("[]")){
                 return true;
             };
-        }else if(type.equals("Number") && targetParamTypes.contains("Object")){
-            return true;
         }else if(type.equals("BigInteger") && targetParamTypes.contains("Number")){
             return true;
         }else if(type.equals("BigDecimal") && targetParamTypes.contains("Number")){
