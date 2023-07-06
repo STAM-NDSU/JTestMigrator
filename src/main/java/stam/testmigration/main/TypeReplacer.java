@@ -22,33 +22,33 @@ public class TypeReplacer {
 
     void replaceSimilarTypes(CompilationUnit cu){
         Map<String, String> classPairs = new HashMap<>();
-
         for(String sourceType : getSourceTypes(cu)){
             if(MethodMatcher.isNotHelper(sourceType, null)){
                 String targetType = findSimilarTargetType(sourceType);
-                if(targetType != null){
-                    classPairs.put(sourceType, targetType);
-                }
+                if(targetType != null) classPairs.put(sourceType, targetType);
             }
         }
-
         replaceTypes(classPairs, cu);
         //TODO: replace constructor arguments
     }
 
     private void replaceTypes(Map<String, String> classPairs, CompilationUnit cu){
-        ArrayList<String> types = new ArrayList<>();
+        Set<String> types = new HashSet<>();
         cu.accept(new VoidVisitorAdapter<Object>() {
             @Override
             public void visit(ObjectCreationExpr expr, Object arg){
                 super.visit(expr, arg);
                 String type = expr.getTypeAsString();
                 if(classPairs.containsKey(type)){
-                    new ConstructorMapper().findTargetConstructor(expr, classPairs.get(type));
-                    expr.setType(classPairs.get(type));
+                    String targetType = classPairs.get(type);
+                    new ConstructorMapper().findTargetConstructor(expr, targetType);
+                    expr.setType(targetType);
+                    types.add(targetType);
                 }else if(MethodMatcher.sourceTargetClass.containsKey(type)){
                     new ConstructorMapper().findTargetConstructor(expr, Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type)));
-                    expr.setType(Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type)));
+                    String targetType = Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type));
+                    expr.setType(targetType);
+                    types.add(targetType);
                 }
             }
 
@@ -57,9 +57,13 @@ public class TypeReplacer {
                 super.visit(expr, arg);
                 String type = expr.getTypeAsString();
                 if(classPairs.containsKey(type)){
-                    expr.setType(classPairs.get(type));
+                    String targetType = classPairs.get(type);
+                    expr.setType(targetType);
+                    types.add(targetType);
                 }else if(MethodMatcher.sourceTargetClass.containsKey(type)){
-                    expr.setType(Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type)));
+                    String targetType = Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type));
+                    expr.setType(targetType);
+                    types.add(targetType);
                 }
             }
 
@@ -68,9 +72,13 @@ public class TypeReplacer {
                 super.visit(expr, arg);
                 String type = expr.getTypeAsString();
                 if(classPairs.containsKey(type)){
-                    expr.setType(classPairs.get(type));
+                    String targetType = classPairs.get(type);
+                    expr.setType(targetType);
+                    types.add(targetType);
                 }else if(MethodMatcher.sourceTargetClass.containsKey(type)){
-                    expr.setType(Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type)));
+                    String targetType = Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type));
+                    expr.setType(targetType);
+                    types.add(targetType);
                 }
             }
 
@@ -79,9 +87,17 @@ public class TypeReplacer {
                 super.visit(declaration, arg);
                 String type = declaration.getElementType().asString();
                 if(classPairs.containsKey(type)){
-                    declaration.getVariables().forEach(var -> var.setType(classPairs.get(type)));
+                    declaration.getVariables().forEach(var -> {
+                        String targetType = classPairs.get(type);
+                        var.setType(targetType);
+                        types.add(targetType);
+                    });
                 }else if(MethodMatcher.sourceTargetClass.containsKey(type)){
-                    declaration.getVariables().forEach(var -> var.setType(Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type))));
+                    declaration.getVariables().forEach(var -> {
+                        String targetType = Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type));
+                        var.setType(targetType);
+                        types.add(targetType);
+                    });
                 }
             }
 
@@ -90,8 +106,9 @@ public class TypeReplacer {
                 super.visit(catchClause, arg);
                 String type = catchClause.getParameter().getTypeAsString();
                 if(classPairs.containsKey(type)){
-                    catchClause.getParameter().setType(classPairs.get(type));
-                    types.add(classPairs.get(type));
+                    String targetType = classPairs.get(type);
+                    catchClause.getParameter().setType(targetType);
+                    types.add(targetType);
                 }else if(MethodMatcher.sourceTargetClass.containsKey(type)){
                     String targetType = Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type));
                     catchClause.getParameter().setType(targetType);
@@ -103,8 +120,9 @@ public class TypeReplacer {
                 super.visit(parameter, arg);
                 String type = parameter.getTypeAsString();
                 if(classPairs.containsKey(type)){
-                    parameter.setType(classPairs.get(type));
-                    types.add(classPairs.get(type));
+                    String targetType = classPairs.get(type);
+                    parameter.setType(targetType);
+                    types.add(targetType);
                 }else if(MethodMatcher.sourceTargetClass.containsKey(type)){
                     String targetType = Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type));
                     parameter.setType(targetType);
@@ -116,8 +134,9 @@ public class TypeReplacer {
                 super.visit(expr, arg);
                 String type = expr.getTypeAsString();
                 if(classPairs.containsKey(type)){
-                    expr.setType(classPairs.get(type));
-                    types.add(classPairs.get(type));
+                    String targetType = classPairs.get(type);
+                    expr.setType(targetType);
+                    types.add(targetType);
                 }else if(MethodMatcher.sourceTargetClass.containsKey(type)){
                     String targetType = Iterables.getOnlyElement(MethodMatcher.sourceTargetClass.get(type));
                     expr.setType(targetType);
@@ -126,9 +145,7 @@ public class TypeReplacer {
             }
         }, null);
 
-        for(String type : types){
-            addImport(type, cu);
-        }
+        types.forEach(type -> addImport(type, cu));
     }
 
     private void addImport(String type, CompilationUnit cu){
