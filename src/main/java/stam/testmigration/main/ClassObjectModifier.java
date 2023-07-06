@@ -448,10 +448,7 @@ public class ClassObjectModifier {
     private boolean isPrivateConstructor(CompilationUnit cUnit, String type){
         ArrayList<ConstructorDeclaration> constructors = new ArrayList<>(cUnit.findAll(ConstructorDeclaration.class));
         constructors.removeIf(item -> !item.getNameAsString().equals(type));
-        if(!constructors.isEmpty() && constructors.get(0).isPrivate()){
-            return true;
-        }
-        return false;
+        return (!constructors.isEmpty() && constructors.get(0).isPrivate());
     }
 
     private void getAllObjectsInTest(ArrayList<ObjectCreationExpr> objects){
