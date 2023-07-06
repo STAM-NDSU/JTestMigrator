@@ -69,8 +69,8 @@ public class TestModifier {
         commitChanges(cu, testFile);
         new MethodMatcher().matchMethods(cu);
         moveStaticFields(cu, sourceClassName);
+        new MethodCallResolver().resolveCalls(cu);
         replaceMethodCall(cu, sourceTestMethod, targetTestMethod);
-        new MethodCallResolver().resolveCalls();
         classObjModifier.replaceClass();
         removeMethodCall(cu, sourceClassName, targetClassName);
         new ExceptionHandler(cu, targetTestMethod, targetClassName).addException();
@@ -341,7 +341,8 @@ public class TestModifier {
                 }else if(MethodMatcher.similarMethods.containsKey(name) && !name.equals(targetTestMethod) && !MethodMatcher.helperCallExprs.contains(callExpr)
                         && !MethodMatcher.similarMethods.get(name).equals(sourceTestMethod) && !MethodMatcher.similarMethods.get(name).equals(targetTestMethod)
                         && !MethodMatcher.javaAPIs.contains(callExpr)){
-                    node.setName(MethodMatcher.similarMethods.get(name));
+                    MethodDeclaration expr = MethodCallResolver.resolvedCalls.get(node.toString());
+                    node.setName(MethodMatcher.similarMethodDecl.get(expr).getNameAsString());
                     storeReplacedMethod(MethodMatcher.similarMethods.get(name), callExpr);
                     checkStaticMethods(node, name, objectsRequired, cu);
                 }

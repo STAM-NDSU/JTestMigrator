@@ -9,26 +9,22 @@ import stam.testmigration.search.CodeSearchResults;
 import stam.testmigration.setup.SetupTargetApp;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class MethodCallResolver {
-
-    static Map<MethodCallExpr, MethodDeclaration> resolvedMethodCalls = new HashMap<>();
+    static Map<String, MethodDeclaration> resolvedCalls = new HashMap<>();
     static Map<MethodCallExpr, ArrayList<String>> sourceParamTypes = new HashMap<>();
     static ArrayList<MethodCallExpr> javaAPIs = new ArrayList<>();
 
-    void resolveCalls(){
-        ArrayList<MethodCallExpr> methodCalls = getMethodsCalledInTest();
-
+    void resolveCalls(CompilationUnit cu){
+        CodeSearchResults csr = new CodeSearchResults();
+        Set<String> methodCalls = getMethodsCalledInTest(cu, csr);
+        Map<MethodCallExpr, MethodDeclaration> resolvedMethodCalls = new HashMap<>();
         Objects.requireNonNull(ClassObjectModifier.getTestCompilationFromSourceApp()).accept(new VoidVisitorAdapter<Object>() {
             @Override
             public void visit(MethodCallExpr expr, Object arg){
                 super.visit(expr, arg);
-                MethodCallExpr clonedExpr = expr.clone().removeScope();
-                if(methodCalls.contains(clonedExpr) && !resolvedMethodCalls.containsKey(expr)){
+                if(methodCalls.contains(expr.toString()) && !resolvedMethodCalls.containsKey(expr)){
                     MethodDeclaration methodDeclaration = null;
                     try {
                         methodDeclaration = getMethodDecl(expr.resolve());
@@ -54,16 +50,18 @@ public class MethodCallResolver {
 
         for(Map.Entry<MethodCallExpr, MethodDeclaration> entry: resolvedMethodCalls.entrySet()){
             ArrayList<String> paramTypes = new ArrayList<>();
+            MethodCallExpr clonedKey = entry.getKey().clone();
             entry.getValue().getParameters().forEach(param -> paramTypes.add(param.getTypeAsString()));
             //adjust param types for varArg
-            int paramDiffSize = entry.getKey().getArguments().size()-paramTypes.size();
+            int paramDiffSize = clonedKey.getArguments().size()-paramTypes.size();
             if(paramDiffSize > 0){
                 String type = paramTypes.get(paramTypes.size()-1);
                 for(int i=0; i<paramDiffSize; i++){
                     paramTypes.add(type);
                 }
             }
-            sourceParamTypes.put(entry.getKey().removeScope(), paramTypes);
+            sourceParamTypes.put(clonedKey.removeScope(), paramTypes);
+            resolvedCalls.put(entry.getKey().toString().replace(csr.getSourceClassName(), csr.getTargetClassName()), entry.getValue());
         }
     }
 
@@ -137,13 +135,21 @@ public class MethodCallResolver {
         return paramTypes;
     }
 
-    private ArrayList<MethodCallExpr> getMethodsCalledInTest(){
-        ArrayList<MethodCallExpr> methodCalls = new ArrayList<>();
-        for(ArrayList<MethodCallExpr> exprs: TestModifier.replacedMethods.values()){
-            for(MethodCallExpr callExpr: exprs){
-                methodCalls.add(callExpr.removeScope());
+    private Set<String> getMethodsCalledInTest(CompilationUnit cu, CodeSearchResults csr){
+        Set<String> methodCalls = new HashSet<>();
+        cu.accept(new VoidVisitorAdapter<Object>() {
+            @Override
+            public void visit(MethodCallExpr callExpr, Object arg){
+                super.visit(callExpr, arg);
+                String name = callExpr.getNameAsString();
+                if(MethodMatcher.similarMethods.containsKey(name) && !name.equals(csr.getTargetTestMethod()) && !MethodMatcher.helperCallExprs.contains(callExpr)
+                        && !MethodMatcher.similarMethods.get(name).equals(csr.getSourceTestMethod()) && !MethodMatcher.similarMethods.get(name).equals(csr.getTargetTestMethod())
+                        && !MethodMatcher.javaAPIs.contains(callExpr)){
+                    methodCalls.add(callExpr.toString().replace(csr.getTargetClassName(), csr.getSourceClassName()));
+                }
             }
-        }
+        }, null);
+
         return methodCalls;
     }
 }
