@@ -66,7 +66,7 @@ public class MethodMatcher {
         MethodDeclaration target = null;
         File targetFile = null;
 
-        Stack<File> stack = getTargetFilesStack();
+        Stack<File> stack = getTargetFilesStack(sourceClass);
         while(!stack.isEmpty()) {
             File child = stack.pop();
             if (child.isDirectory() && !isTestDir(child)) {
@@ -76,25 +76,17 @@ public class MethodMatcher {
                 try {
                     for(MethodDeclaration targetMethod: getMethodDecls(new JavaParser().parse(child).getResult().get())){
                         if(isTargetTestMethod(targetMethod, name)) continue;
-
                         double score = calculateVecSimilarity(sourceMethod, targetMethod);
-                        double vecClassScore = calculateVecSimilarity(sourceClass, name);
-                        double levClassScore = calculateLVSim(sourceClass, name);
 
-                        if(targetScore.containsKey(targetMethod)){
-                            if(targetScore.get(targetMethod)>=score) {
-                                continue;
-                            }else {
-                                findAnotherTargetForSource(targetMethod);
-                            }
-                        }
-
+                        if(targetScore.containsKey(targetMethod) && targetScore.get(targetMethod)>=score) continue;
                         if(sourceClass.equals(new CodeSearchResults().getSourceClassName())
                                 && name.equals(new CodeSearchResults().getTargetClassName()) && score>ConfigurationRetriever.thresholdValue && score>finalScore){
                             finalScore = score;
                             target = targetMethod;
                             targetFile = child;
                         }else if(!sourceClass.equals(new CodeSearchResults().getSourceClassName())){
+                            double vecClassScore = calculateVecSimilarity(sourceClass, name);
+                            double levClassScore = calculateLVSim(sourceClass, name);
                             if(vecClassScore == 1 && score>ConfigurationRetriever.thresholdValue){
                                 if(finalClassScore<1){
                                     finalScore = score;
@@ -141,6 +133,7 @@ public class MethodMatcher {
             }
         }
         if(target != null){
+            if(targetScore.containsKey(target) && targetScore.get(target)<finalScore) findAnotherTargetForSource(target);
             checkThresholdAndStoreSimMethods(finalScore, sourceMethod, target, sourceClass, targetFile);
         }
     }
@@ -184,10 +177,16 @@ public class MethodMatcher {
         return file.getAbsolutePath().contains("\\src\\test\\");
     }
 
-    Stack<File> getTargetFilesStack(){
+    Stack<File> getTargetFilesStack(String className){
         Stack<File> stack = new Stack<>();
         String path = new SetupTargetApp().findFileOrDir(new File(targetDir), new CodeSearchResults().getTargetFileName());
-        stack.push(new File(new File(path).getParent()));
+        if(className.equals(new CodeSearchResults().getSourceClassName())){
+            //look for similar methods in only target class
+            stack.push(new File(path));
+        }else{
+            //look for similar methods in the target class package
+            stack.push(new File(new File(path).getParent()));
+        }
         return stack;
     }
 
@@ -250,7 +249,7 @@ public class MethodMatcher {
         }
         double vecScore = totalScore/sourceWords.size();
         double typeScore = getTypeSimilarityScore(sourceMethod, targetMethod);
-        return (vecScore*0.6)+(typeScore*0.4);
+        return (vecScore*0.5)+(typeScore*0.5);
     }
 
     double calculateVecSimilarity(String sourceMethod, String targetMethod){
@@ -298,7 +297,7 @@ public class MethodMatcher {
 
         double distance = 1 - ((double) new LevenshteinDistance().apply(sourceMethodName, targetMethodName)/maxLength);
         double typeScore = getTypeSimilarityScore(sourceMethod, targetMethod);
-        return  (distance*0.6)+(typeScore*0.4);
+        return  (distance*0.5)+(typeScore*0.5);
     }
 
     double calculateLVSim(String sourceClass, String targetClass){
@@ -339,8 +338,11 @@ public class MethodMatcher {
             for(int i=0; i<sourceParams.size(); i++){
                 String sourceParam = sourceParams.get(i);
                 String targetParam = targetParams.get(i);
-                if(sourceParam.equals(targetParam)
-                        || new InputTypeFilter().compatibleTypeExists(sourceParam, new ArrayList<>(Collections.singleton(targetParam)))) score++;
+                if(sourceParam.equals(targetParam)){
+                    score++;
+                }else if(new InputTypeFilter().compatibleTypeExists(sourceParam, new ArrayList<>(Collections.singleton(targetParam))) ){
+                    score=score+0.6;
+                }
             }
             return score/(sourceParams.size());
         }

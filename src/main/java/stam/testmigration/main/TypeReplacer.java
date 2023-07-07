@@ -234,7 +234,7 @@ public class TypeReplacer {
         double simScore = 0;
         double levSimScore = 0;
 
-        Stack<File> stack = methodMatcher.getTargetFilesStack();
+        Stack<File> stack = methodMatcher.getTargetFilesStack(sourceType);
         while(!stack.isEmpty()){
             File child = stack.pop();
             if (child.isDirectory()) {
