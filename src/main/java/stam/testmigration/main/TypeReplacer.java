@@ -6,6 +6,7 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.ClassExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
@@ -23,13 +24,18 @@ public class TypeReplacer {
     void replaceSimilarTypes(CompilationUnit cu){
         Map<String, String> classPairs = new HashMap<>();
         for(String sourceType : getSourceTypes(cu)){
-            if(MethodMatcher.isNotHelper(sourceType, null)){
+            if(!isHelper(sourceType)){
                 String targetType = findSimilarTargetType(sourceType);
                 if(targetType != null) classPairs.put(sourceType, targetType);
             }
         }
         replaceTypes(classPairs, cu);
         //TODO: replace constructor arguments
+    }
+
+    private boolean isHelper(String className){
+        String filePath = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getSourceDir()), className+".java");
+        return (filePath != null && filePath.contains(File.separator+"test"+File.separator));
     }
 
     private void replaceTypes(Map<String, String> classPairs, CompilationUnit cu){

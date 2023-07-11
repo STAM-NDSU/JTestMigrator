@@ -37,19 +37,14 @@ public class MethodMatcher {
     static Map<String, String> targetMethodAndClass = new HashMap<>();
     static Multimap<String, String> sourceTargetClass = ArrayListMultimap.create();
     static ArrayList<MethodCallExpr> helperCallExprs = new ArrayList<>();
-    static ArrayList<MethodCallExpr> javaAPIs = new ArrayList<>();
     private final Map<MethodDeclaration, Double> targetScore = new HashMap<>();
-    private Map<MethodDeclaration, String> sourceMethods = new HashMap<>();
 
-    void matchMethods(CompilationUnit modifiedTestCU) {
+    void matchMethods() {
         setProjectRootDir(sourceDir, true);
         setProjectRootDir(targetDir, false);
 
-        sourceMethods= getMethodsCalledInTestClass(modifiedTestCU);
-        for(Map.Entry<MethodDeclaration, String> entry: sourceMethods.entrySet()){
-            MethodDeclaration sourceMethod = entry.getKey();
-            String sourceClass = entry.getValue();
-
+        for(MethodDeclaration sourceMethod : new HashSet<>(MethodCallResolver.resolvedCalls.values())){
+            String sourceClass = sourceMethod.resolve().getClassName();
             if(isSourceTestMethod(sourceMethod, sourceClass)) continue;
             calculateSimilarity(sourceMethod, sourceClass);
         }
@@ -78,7 +73,7 @@ public class MethodMatcher {
                         if(isTargetTestMethod(targetMethod, name)) continue;
                         double score = calculateVecSimilarity(sourceMethod, targetMethod);
 
-                        if(targetScore.containsKey(targetMethod) && targetScore.get(targetMethod)>=score) continue;
+                        if(targetScore.containsKey(targetMethod) && targetScore.get(targetMethod)>=score && !isOverloaded(sourceMethod, targetMethod)) continue;
                         if(sourceClass.equals(new CodeSearchResults().getSourceClassName())
                                 && name.equals(new CodeSearchResults().getTargetClassName()) && score>ConfigurationRetriever.thresholdValue && score>finalScore){
                             finalScore = score;
@@ -138,6 +133,16 @@ public class MethodMatcher {
         }
     }
 
+    private boolean isOverloaded(MethodDeclaration source, MethodDeclaration target){
+        for(Map.Entry<MethodDeclaration, MethodDeclaration> entry: similarMethodDecl.entrySet()){
+            MethodDeclaration src = entry.getKey();
+            MethodDeclaration trg = entry.getValue();
+            if(target.getDeclarationAsString().equals(trg.getDeclarationAsString()) && source.getNameAsString().equals(src.getNameAsString())
+                    && source.getParameters().size()==src.getParameters().size()) return true;
+        }
+        return false;
+    }
+
     private boolean isTargetTestMethod(MethodDeclaration targetMethod, String targetClass){
         return (targetMethod.getNameAsString().equals(new CodeSearchResults().getTargetTestMethod())
                 && targetClass.equals(new CodeSearchResults().getTargetClassName())) || isDeprecated(targetMethod);
@@ -164,7 +169,7 @@ public class MethodMatcher {
         }
         if(source != null) {
             similarMethodDecl.remove(source);
-            calculateSimilarity(source, sourceMethods.get(source));
+            calculateSimilarity(source, source.resolve().getClassName());
         }
     }
 
@@ -359,12 +364,6 @@ public class MethodMatcher {
         return params;
     }
 
-    private String getReturnType(MethodDeclaration node){
-        String type = node.getTypeAsString();
-        if(type.contains("Set") || type.contains("List") || type.contains("Map") || type.contains("Vector")) type = "Collection";
-        return type;
-    }
-
     String buildName(ArrayList<String> words){
         StringBuilder name = new StringBuilder();
         for(String word: words){
@@ -459,103 +458,6 @@ public class MethodMatcher {
                 }
             }
         }
-    }
-
-    private Map<MethodDeclaration, String> getMethodsCalledInTestClass(CompilationUnit modifiedTestCU){
-        CompilationUnit testCU = Objects.requireNonNull(getTestCompilationFromSourceApp());
-
-        ArrayList<String> methodsCalledInModifiedTest = new ArrayList<>();
-        getMethodsCalledInModifiedTest(modifiedTestCU, methodsCalledInModifiedTest);
-
-        Map<MethodDeclaration, String> methodsCalledInTest = new HashMap<>();
-        testCU.accept(new VoidVisitorAdapter<Object>() {
-            @Override
-            public void visit(MethodCallExpr callExpr, Object arg){
-                super.visit(callExpr, arg);
-                if(methodsCalledInModifiedTest.contains(callExpr.getNameAsString())){
-                    try {
-                        ResolvedMethodDeclaration expr = callExpr.resolve();
-                        String qualifiedName = expr.getQualifiedName();
-                        if(qualifiedName.startsWith("java")){
-                            javaAPIs.add(callExpr);
-                        }else{
-                            String className = TestModifier.getFileNameOfInnerClass(expr.getClassName());
-                            if(!getKeysByValue(methodsCalledInTest, className).contains(callExpr.getNameAsString()) && isNotHelper(className, callExpr)){
-                                MethodDeclaration methodDeclaration = getMethodDeclaration(callExpr, className);
-                                if(methodDeclaration != null){
-                                    methodsCalledInTest.put(methodDeclaration, className);
-                                }
-                            }
-                        }
-                    }catch(RuntimeException re){ javaAPIs.add(callExpr); }
-                }
-            }
-        }, null);
-
-        return methodsCalledInTest;
-    }
-
-    static boolean isNotHelper(String className, MethodCallExpr callExpr){
-        String testPathString = File.separator+"test"+File.separator;
-        String filePath = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getSourceDir()), className+".java");
-        if(filePath != null && filePath.contains(testPathString)){
-            if(callExpr != null){
-                helperCallExprs.add(callExpr);
-            }
-            return false;
-        }
-        return true;
-    }
-
-    private ArrayList<String> getKeysByValue(Map<MethodDeclaration, String> methodsCalledInTest, String value){
-        ArrayList<String> methodNames = new ArrayList<>();
-        for(Map.Entry<MethodDeclaration, String> entry : methodsCalledInTest.entrySet()){
-            if(entry.getValue().equals(value)){
-                methodNames.add(entry.getKey().getNameAsString());
-            }
-        }
-        return methodNames;
-    }
-
-    private MethodDeclaration getMethodDeclaration(MethodCallExpr callExpr, String className){
-        ProjectRoot sourceProjectRoot = new SymbolSolverCollectionStrategy().collect(new File(sourceDir).toPath());
-        final MethodDeclaration[] methodDeclaration = {null};
-        for(SourceRoot sourceRoot: sourceProjectRoot.getSourceRoots()){
-            try {
-                sourceRoot.tryToParse();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
-            for(CompilationUnit compilationUnit: sourceRoot.getCompilationUnits()){
-                if(compilationUnit.getTypes().size()>0 && compilationUnit.getType(0).resolve().getName().equals(className)){
-                    compilationUnit.accept(new VoidVisitorAdapter<Object>() {
-                        @Override
-                        public void visit(MethodDeclaration declaration, Object arg){
-                            super.visit(declaration, arg);
-                            if(declaration.resolve().getQualifiedSignature().equals(callExpr.resolve().getQualifiedSignature())){
-                                methodDeclaration[0] = declaration;
-                            }
-                        }
-                    }, null);
-                }
-            }
-        }
-
-        return methodDeclaration[0];
-    }
-
-    private void getMethodsCalledInModifiedTest(CompilationUnit modifiedTestCU, ArrayList<String> methods){
-        modifiedTestCU.accept(new VoidVisitorAdapter<Object>() {
-            @Override
-            public void visit(MethodCallExpr callExpr, Object arg){
-                super.visit(callExpr, arg);
-                String name = callExpr.getNameAsString();
-                if(!methods.contains(name) && !name.equals("is") && !name.startsWith("assert")){
-                    methods.add(name);
-                }
-
-            }
-        }, null);
     }
 
     CompilationUnit getTestCompilationFromSourceApp(){

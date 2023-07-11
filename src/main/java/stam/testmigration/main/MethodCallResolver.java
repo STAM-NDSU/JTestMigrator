@@ -28,10 +28,13 @@ public class MethodCallResolver {
                     MethodDeclaration methodDeclaration = null;
                     try {
                         methodDeclaration = getMethodDecl(expr.resolve());
-                    }catch(RuntimeException ignore){}
+                    }catch(RuntimeException exception){
+                        javaAPIs.add(expr);
+                    }
+
                     if(methodDeclaration != null){
                         resolvedMethodCalls.put(expr, methodDeclaration);
-                    }else if(expr.getNameAsString().equals(new CodeSearchResults().getSourceTestMethod())){
+                    }else if(expr.getNameAsString().equals(csr.getSourceTestMethod())){
                         MethodDeclaration selectedMethod = selectMethodDecl(expr);
                         if(selectedMethod != null){
                             resolvedMethodCalls.put(expr, selectedMethod);
@@ -60,8 +63,9 @@ public class MethodCallResolver {
                     paramTypes.add(type);
                 }
             }
-            sourceParamTypes.put(clonedKey.removeScope(), paramTypes);
-            resolvedCalls.put(entry.getKey().toString().replace(csr.getSourceClassName(), csr.getTargetClassName()), entry.getValue());
+            clonedKey.removeScope();
+            sourceParamTypes.put(clonedKey, paramTypes);
+            resolvedCalls.put(clonedKey.toString().replace(csr.getSourceClassName(), csr.getTargetClassName()), entry.getValue());
         }
     }
 
@@ -70,7 +74,7 @@ public class MethodCallResolver {
         ArrayList<String> paramTypes = getMethodParamTypes(rmd);
         String className = rmd.getClassName();
         String path = new SetupTargetApp().findFileOrDir(new File(SetupTargetApp.getSourceDir()), className+".java");
-        if(path != null){
+        if(path != null && !path.contains(File.separator+"test"+File.separator)){
             CompilationUnit sourceCU = SetupTargetApp.getCompilationUnit(new File(path));
             sourceCU.accept(new VoidVisitorAdapter<Object>() {
                 @Override
@@ -141,12 +145,7 @@ public class MethodCallResolver {
             @Override
             public void visit(MethodCallExpr callExpr, Object arg){
                 super.visit(callExpr, arg);
-                String name = callExpr.getNameAsString();
-                if(MethodMatcher.similarMethods.containsKey(name) && !name.equals(csr.getTargetTestMethod()) && !MethodMatcher.helperCallExprs.contains(callExpr)
-                        && !MethodMatcher.similarMethods.get(name).equals(csr.getSourceTestMethod()) && !MethodMatcher.similarMethods.get(name).equals(csr.getTargetTestMethod())
-                        && !MethodMatcher.javaAPIs.contains(callExpr)){
-                    methodCalls.add(callExpr.toString().replace(csr.getTargetClassName(), csr.getSourceClassName()));
-                }
+                methodCalls.add(callExpr.toString().replace(csr.getTargetClassName(), csr.getSourceClassName()));
             }
         }, null);
 
