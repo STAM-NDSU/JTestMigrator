@@ -65,7 +65,7 @@ public class MethodCallResolver {
             }
             clonedKey.removeScope();
             sourceParamTypes.put(clonedKey, paramTypes);
-            resolvedCalls.put(clonedKey.toString().replace(csr.getSourceClassName(), csr.getTargetClassName()), entry.getValue());
+            resolvedCalls.put(replaceClass(clonedKey, csr.getSourceClassName(), csr.getTargetClassName()), entry.getValue());
         }
     }
 
@@ -145,10 +145,25 @@ public class MethodCallResolver {
             @Override
             public void visit(MethodCallExpr callExpr, Object arg){
                 super.visit(callExpr, arg);
-                methodCalls.add(callExpr.toString().replace(csr.getTargetClassName(), csr.getSourceClassName()));
+                methodCalls.add(replaceClass(callExpr, csr.getTargetClassName(), csr.getSourceClassName()));
             }
         }, null);
 
         return methodCalls;
+    }
+
+    private String replaceClass(MethodCallExpr callExpr, String original, String replacement){
+        String scope = "";
+        if(callExpr.getScope().isPresent()){
+            scope = callExpr.getScope().get().toString();
+        }
+        if(scope.startsWith(original)){
+            scope = replacement+scope.substring(original.length());
+        }
+        String name = callExpr.getNameAsString();
+        String arg = callExpr.getArguments().toString().replace(original, replacement);
+        arg = "("+arg.substring(1, arg.length()-1)+")";
+        if(scope.isEmpty()) return name+arg;
+        return scope+"."+name+arg;
     }
 }
