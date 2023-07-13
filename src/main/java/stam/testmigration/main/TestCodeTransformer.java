@@ -32,7 +32,7 @@ public class TestCodeTransformer {
     static ArrayList<String> constructorsInTest = new ArrayList<>();
     private double firstCoverage;
 
-    void modifyTest() {
+    void transformTest() {
         SetupTargetApp setupTargetApp = new SetupTargetApp();
         CodeSearchResults searchResults = new CodeSearchResults();
 

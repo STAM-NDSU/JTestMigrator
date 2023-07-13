@@ -6,7 +6,6 @@ import stam.testmigration.setup.SetupTargetApp;
 
 public class TestMigrator {
     public static void main(String[] args) {
-
         new ConfigCreator().createConfigFile();
 
         ConfigurationRetriever configRet = new ConfigurationRetriever();
@@ -14,7 +13,7 @@ public class TestMigrator {
         configRet.getSourceTargetDirs();
 
         new SetupTargetApp().setupTarget();
-        new TestCodeTransformer().modifyTest();
+        new TestCodeTransformer().transformTest();
     }
 
 }
