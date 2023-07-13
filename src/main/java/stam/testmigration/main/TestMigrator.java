@@ -14,7 +14,7 @@ public class TestMigrator {
         configRet.getSourceTargetDirs();
 
         new SetupTargetApp().setupTarget();
-        new TestModifier().modifyTest();
+        new TestCodeTransformer().modifyTest();
     }
 
 }

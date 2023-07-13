@@ -108,8 +108,8 @@ public class InputInference {
     private Map<String, List<List<String>>> getArgSetForConstructors(InputTypeFilter typeFilter, InputTypeConverter typeConverter,
                                                                      NodeList<VariableDeclarator> fieldsInTest){
         Map<String, List<List<String>>> argsetForConstructors = new HashMap<>();
-        ArrayList<String> constructorTypes = new ArrayList<>(new HashSet<>(TestModifier.constructorsInTest));
-        int constructorsSize = TestModifier.constructorsInTest.size();
+        ArrayList<String> constructorTypes = new ArrayList<>(new HashSet<>(TestCodeTransformer.constructorsInTest));
+        int constructorsSize = TestCodeTransformer.constructorsInTest.size();
 
         //get params of the class constructors used in the test class
         Map<String, NodeList<Parameter>> constParameters = getConstructorParams(constructorTypes);
@@ -131,7 +131,7 @@ public class InputInference {
         }
 
         //if constructor parameters contain new inputs of reference type, get arg set for new inputs too
-        if(constructorsSize < TestModifier.constructorsInTest.size()){
+        if(constructorsSize < TestCodeTransformer.constructorsInTest.size()){
             getArgSetForConstructors(typeFilter, typeConverter, fieldsInTest);
         }
 
@@ -149,7 +149,7 @@ public class InputInference {
         //for new constructor which is required for new input generation
         for(String name: constructorTypes){
             if(!targetClasses.contains(name)){
-                String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestModifier.getFileNameOfInnerClass(name)+".java");
+                String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestCodeTransformer.getFileNameOfInnerClass(name)+".java");
                 if(path != null){
                     CompilationUnit cUnit = SetupTargetApp.getCompilationUnit(new File(path));
                     ConstructorDeclaration constructor = getTargetObjParams(cUnit, name);
@@ -167,7 +167,7 @@ public class InputInference {
 
         //get params of the target class methods used in the test class
         Map<String, NodeList<Parameter>> methodParameters = new HashMap<>();
-        for(Map.Entry<String, ArrayList<MethodCallExpr>> entry: TestModifier.replacedMethods.entrySet()){
+        for(Map.Entry<String, ArrayList<MethodCallExpr>> entry: TestCodeTransformer.replacedMethods.entrySet()){
             CompilationUnit targetCU = getCU(entry.getKey());
             if(targetCU != null){
                 methodParameters.put(entry.getKey(), getTargetMethodParams(targetCU, entry.getKey()));
@@ -196,12 +196,12 @@ public class InputInference {
     private CompilationUnit getCU(String methodName){
         if(MethodMatcher.targetMethodAndClass.containsKey(methodName)){
             String className = MethodMatcher.targetMethodAndClass.get(methodName);
-            String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestModifier.getFileNameOfInnerClass(className)+".java");
+            String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestCodeTransformer.getFileNameOfInnerClass(className)+".java");
             if(path != null){
                 return SetupTargetApp.getCompilationUnit(new File(path));
             }
         }else if(methodName.equals(targetTestMethod)){
-            String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestModifier.getFileNameOfInnerClass(targetClassName)+".java");
+            String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestCodeTransformer.getFileNameOfInnerClass(targetClassName)+".java");
             return SetupTargetApp.getCompilationUnit(new File(path));
         }
         return null;
@@ -250,7 +250,7 @@ public class InputInference {
             }
         }
         selectInputForConstructors(argsetConstructors, argListConstructors);
-        new TestModifier().commitChanges(cu, testFile);
+        new TestCodeTransformer().commitChanges(cu, testFile);
 
         Map<String, List<String>> argMethodConstructor = new LinkedHashMap<>(argsetMethods);
         argMethodConstructor.putAll(argsetConstructors);
@@ -356,7 +356,7 @@ public class InputInference {
     }
 
     private MethodCallExpr getSourceMethodCall(MethodCallExpr targetMethodCallExpr){
-        ArrayList<MethodCallExpr> sourceMethodCalls = TestModifier.replacedMethods.get(targetMethodCallExpr.getNameAsString());
+        ArrayList<MethodCallExpr> sourceMethodCalls = TestCodeTransformer.replacedMethods.get(targetMethodCallExpr.getNameAsString());
         if(sourceMethodCalls == null){
             return null;
         }else if(sourceMethodCalls.size() == 1){
@@ -853,12 +853,12 @@ public class InputInference {
     }
 
     private CompilationUnit getSourceCU(){
-        String sourcePath = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getSourceDir()), TestModifier.getFileNameOfInnerClass(sourceClassName)+".java");
+        String sourcePath = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getSourceDir()), TestCodeTransformer.getFileNameOfInnerClass(sourceClassName)+".java");
         return SetupTargetApp.getCompilationUnit(new File(sourcePath));
     }
 
     private CompilationUnit getTargetCU(){
-        String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestModifier.getFileNameOfInnerClass(targetClassName)+".java");
+        String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestCodeTransformer.getFileNameOfInnerClass(targetClassName)+".java");
         return SetupTargetApp.getCompilationUnit(new File(path));
     }
 

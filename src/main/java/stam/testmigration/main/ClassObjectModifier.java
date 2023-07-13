@@ -190,7 +190,7 @@ public class ClassObjectModifier {
                         if(isTargetMethodStatic){
                             node.getScope().get().replace(new NameExpr().setName(targetClassName));
                         }else{
-                            TestModifier.constructorsInTest.add(targetClassName);
+                            TestCodeTransformer.constructorsInTest.add(targetClassName);
                             node.getScope().get().replace(new ObjectCreationExpr().setType(targetClassName));
                         }
                     }else if(node.getNameAsString().equals(sourceTestMethod) && node.getScope().isEmpty()){
@@ -198,7 +198,7 @@ public class ClassObjectModifier {
                             node.setScope(new NameExpr(targetClassName));
                         }else{
                             node.setScope(new ObjectCreationExpr().setType(targetClassName));
-                            TestModifier.constructorsInTest.add(targetClassName);
+                            TestCodeTransformer.constructorsInTest.add(targetClassName);
                         }
                     }
                 }
@@ -228,7 +228,7 @@ public class ClassObjectModifier {
     MethodDeclaration getMethodDeclaration(String dir, String className, String testMethod){
         final MethodDeclaration[] declaration = {null};
         SetupTargetApp setupTargetApp = new SetupTargetApp();
-        String sourcePath = setupTargetApp.findFileOrDir(new File(dir), TestModifier.getFileNameOfInnerClass(className)+".java");
+        String sourcePath = setupTargetApp.findFileOrDir(new File(dir), TestCodeTransformer.getFileNameOfInnerClass(className)+".java");
         CompilationUnit sourceCU = SetupTargetApp.getCompilationUnit(new File(sourcePath));
         sourceCU.accept(new VoidVisitorAdapter<Object>() {
             @Override
@@ -263,7 +263,7 @@ public class ClassObjectModifier {
             }
         }, null);
         //Need to pass parameters later
-        TestModifier.constructorsInTest.add(targetClassName);
+        TestCodeTransformer.constructorsInTest.add(targetClassName);
     }
 
     public static CompilationUnit getTestCompilationFromSourceApp(){

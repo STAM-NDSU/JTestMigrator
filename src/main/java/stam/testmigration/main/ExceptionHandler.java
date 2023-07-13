@@ -75,7 +75,7 @@ public class ExceptionHandler {
     }
 
     private CompilationUnit getTargetCU(){
-        String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestModifier.getFileNameOfInnerClass(targetClassName)+".java");
+        String path = setupTargetApp.findFileOrDir(new File(SetupTargetApp.getTargetDir()), TestCodeTransformer.getFileNameOfInnerClass(targetClassName)+".java");
         return SetupTargetApp.getCompilationUnit(new File(path));
     }
 }

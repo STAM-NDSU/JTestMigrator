@@ -3,14 +3,12 @@ package stam.testmigration.main;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.symbolsolver.utils.SymbolSolverCollectionStrategy;
 import com.github.javaparser.utils.ProjectRoot;
 import com.github.javaparser.utils.SourceRoot;
@@ -19,7 +17,6 @@ import com.google.common.collect.Multimap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
-import org.deeplearning4j.models.word2vec.Word2Vec;
 import stam.testmigration.search.CodeSearchResults;
 import stam.testmigration.setup.ConfigurationRetriever;
 import stam.testmigration.setup.SetupTargetApp;
@@ -235,7 +232,7 @@ public class MethodMatcher {
         helperCU.setImport(helperCU.getImports().size()-1, new ImportDeclaration(importName, false, true));
         //replace package
         helperCU.setPackageDeclaration(packageName);
-        new TestModifier().commitChanges(helperCU, copiedFile);
+        new TestCodeTransformer().commitChanges(helperCU, copiedFile);
     }
 
     private double calculateVecSimilarity(MethodDeclaration sourceMethod, MethodDeclaration targetMethod){

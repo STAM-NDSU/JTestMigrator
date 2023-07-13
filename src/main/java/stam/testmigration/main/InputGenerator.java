@@ -103,8 +103,8 @@ public class InputGenerator {
                         addImportReferenceType(parameter.getType());
                         setterMethodFinder.addSetterMethods(cu, parameter.getType());
                         //Need to pass parameters later
-                        if(!TestModifier.constructorsInTest.contains(paramType)){
-                            TestModifier.constructorsInTest.add(paramType);
+                        if(!TestCodeTransformer.constructorsInTest.contains(paramType)){
+                            TestCodeTransformer.constructorsInTest.add(paramType);
                         }
                     }
                 }

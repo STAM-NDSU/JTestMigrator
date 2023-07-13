@@ -143,7 +143,7 @@ public class ReturnTypeAdjuster {
             public void visit(MethodCallExpr callExpr, Object arg){
                 super.visit(callExpr, arg);
                 callExprs.add(callExpr);
-                if(TestModifier.replacedMethods.containsKey(callExpr.getNameAsString()) || targetMethod.equals(callExpr.getNameAsString())){
+                if(TestCodeTransformer.replacedMethods.containsKey(callExpr.getNameAsString()) || targetMethod.equals(callExpr.getNameAsString())){
                     containsReplacedMethod[0] = true;
                 }
             }

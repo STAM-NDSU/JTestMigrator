@@ -18,7 +18,7 @@ import java.util.*;
 public class TestHelper {
     SetupTargetApp setupTargetApp = new SetupTargetApp();
     CodeSearchResults searchResults = new CodeSearchResults();
-    TestModifier testModifier = new TestModifier();
+    TestCodeTransformer testModifier = new TestCodeTransformer();
 
     void checkHelper(CompilationUnit cu, String sourceClassName) {
 

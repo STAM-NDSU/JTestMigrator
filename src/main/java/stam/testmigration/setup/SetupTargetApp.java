@@ -15,7 +15,7 @@ import com.github.javaparser.utils.SourceRoot;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.model.Model;
-import stam.testmigration.main.TestModifier;
+import stam.testmigration.main.TestCodeTransformer;
 import stam.testmigration.search.CodeSearchResults;
 
 import java.io.File;
@@ -118,15 +118,15 @@ public class SetupTargetApp {
         CompilationUnit compilationUnit = getCompilationUnit(targetTestFile);
         String name = testFileNameInTarget.substring(0, testFileNameInTarget.lastIndexOf("."));
         compilationUnit.getType(0).getName().setIdentifier(name);
-        new TestModifier().commitChanges(compilationUnit, targetTestFile);
+        new TestCodeTransformer().commitChanges(compilationUnit, targetTestFile);
 
     }
 
     private void generateTestFileName(String targetClassName, File testFile){
         String targetMethodName = StringUtils.capitalize(searchResults.getTargetTestMethod());
-        testFileNameInTarget = TestModifier.getFileNameOfInnerClass(targetClassName)+targetMethodName+"Test.java";
+        testFileNameInTarget = TestCodeTransformer.getFileNameOfInnerClass(targetClassName)+targetMethodName+"Test.java";
         if(new File(testFile.getParent()+File.separator+testFileNameInTarget).exists()){
-            testFileNameInTarget = TestModifier.getFileNameOfInnerClass(targetClassName)+targetMethodName+"Test"+new Random().nextInt(100)+".java";
+            testFileNameInTarget = TestCodeTransformer.getFileNameOfInnerClass(targetClassName)+targetMethodName+"Test"+new Random().nextInt(100)+".java";
         }
     }
 

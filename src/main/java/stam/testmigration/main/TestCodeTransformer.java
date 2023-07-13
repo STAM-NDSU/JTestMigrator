@@ -26,7 +26,7 @@ import java.nio.file.StandardOpenOption;
 import java.text.NumberFormat;
 import java.util.*;
 
-public class TestModifier {
+public class TestCodeTransformer {
     static NodeList<FieldDeclaration> fieldsToAdd = new NodeList<>();
     static Map<String, ArrayList<MethodCallExpr>> replacedMethods = new HashMap<>();
     static ArrayList<String> constructorsInTest = new ArrayList<>();

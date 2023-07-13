@@ -423,7 +423,7 @@ public class TestCodeCleaner {
     }
 
     private void removeFieldsNotInTarget(CompilationUnit cu, String targetClassName){
-        ArrayList<String> targetClassVars = new TestModifier().getSourceVariables(cu, targetClassName);
+        ArrayList<String> targetClassVars = new TestCodeTransformer().getSourceVariables(cu, targetClassName);
         ArrayList<String> fieldsInTarget = getFieldsInTarget(targetClassName);
         ArrayList<FieldAccessExpr> fields = new ArrayList<>();
         targetClassVars.add(targetClassName);
@@ -645,7 +645,7 @@ public class TestCodeCleaner {
     }
 
     private boolean hasOverloadedMethods(String targetMethodName, int targetParamSize){
-        ArrayList<MethodCallExpr> sourceCallExprs = TestModifier.replacedMethods.get(targetMethodName);
+        ArrayList<MethodCallExpr> sourceCallExprs = TestCodeTransformer.replacedMethods.get(targetMethodName);
         if(sourceCallExprs != null && sourceCallExprs.size()>1){
             for(MethodCallExpr expr: sourceCallExprs){
                 if(expr.getArguments().size() == targetParamSize){
