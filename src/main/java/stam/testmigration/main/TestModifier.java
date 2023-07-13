@@ -693,11 +693,7 @@ public class TestModifier {
         //Test migrated successfully, but does not pass
         if(testFailed) System.out.println("Test Migration Complete. Calculating Code Coverage...");
 
-        if(errors[1] == 0 || testFailed){
-            return true;
-        }else{
-            return false;
-        }
+        return errors[1] == 0 || testFailed;
     }
 
     //commit changes to test file
