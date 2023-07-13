@@ -141,14 +141,8 @@ public class MethodCallResolver {
 
     private Set<String> getMethodsCalledInTest(CompilationUnit cu, CodeSearchResults csr){
         Set<String> methodCalls = new HashSet<>();
-        cu.accept(new VoidVisitorAdapter<Object>() {
-            @Override
-            public void visit(MethodCallExpr callExpr, Object arg){
-                super.visit(callExpr, arg);
-                methodCalls.add(replaceClass(callExpr, csr.getTargetClassName(), csr.getSourceClassName()));
-            }
-        }, null);
-
+        cu.findAll(MethodCallExpr.class).forEach(callExpr ->
+                methodCalls.add(replaceClass(callExpr, csr.getTargetClassName(), csr.getSourceClassName())));
         return methodCalls;
     }
 
