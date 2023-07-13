@@ -3,6 +3,7 @@ package stam.testmigration.main;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import stam.testmigration.search.CodeSearchResults;
@@ -141,8 +142,13 @@ public class MethodCallResolver {
 
     private Set<String> getMethodsCalledInTest(CompilationUnit cu, CodeSearchResults csr){
         Set<String> methodCalls = new HashSet<>();
-        cu.findAll(MethodCallExpr.class).forEach(callExpr ->
-                methodCalls.add(replaceClass(callExpr, csr.getTargetClassName(), csr.getSourceClassName())));
+        cu.accept(new VoidVisitorAdapter<Object>() {
+            @Override
+            public void visit(MethodCallExpr callExpr, Object arg){
+                super.visit(callExpr, arg);
+                methodCalls.add(replaceClass(callExpr, csr.getTargetClassName(), csr.getSourceClassName()));
+            }
+        }, null);
         return methodCalls;
     }
 
