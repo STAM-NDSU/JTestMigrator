@@ -296,6 +296,19 @@ public class TestCodeCleaner {
         checkFieldsNotInTarget(cu);
         removeFloatingComments(cu);
         removeExplicitWrapperMethods(cu);
+        removeEmptyMethods(cu);
+    }
+
+    private void removeEmptyMethods(CompilationUnit cu){
+        List<MethodDeclaration> declarations = new ArrayList<>();
+        cu.accept(new VoidVisitorAdapter<Object>() {
+            @Override
+            public void visit(MethodDeclaration md, Object arg){
+                super.visit(md, arg);
+                if(md.getBody().get().getStatements().isEmpty()) declarations.add(md);
+            }
+        }, null);
+        cu.getType(0).getMembers().removeAll(declarations);
     }
 
     private void removeExtendedTypes(CompilationUnit cu){
