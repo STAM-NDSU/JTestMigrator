@@ -507,47 +507,40 @@ public class TestCodeCleaner {
     private void removeDeadFields(CompilationUnit cu){
         ArrayList<FieldDeclaration> fieldsInTest = new ArrayList<>(cu.getType(0).getFields());
         ArrayList<FieldDeclaration> deadFields = new ArrayList<>();
+        List<String> tokens = getTokens(cu);
         for(FieldDeclaration field: fieldsInTest){
-            if(field.getAnnotations().isEmpty() && StringUtils.countMatches(cu.getType(0).toString(), field.getVariable(0).getNameAsString()) == 1){
-                deadFields.add(field);
-            }else{
-                //findFieldUsage(field, deadFields, cu);
+            String fieldName = field.getVariable(0).getNameAsString();
+            int count = 0;
+            for(String token: tokens){
+                if(token.equals(fieldName)) count++;
             }
+            if(count==0 && field.getAnnotations().isEmpty()) deadFields.add(field);
         }
         cu.getType(0).getMembers().removeAll(deadFields);
     }
 
-    private void findFieldUsage(FieldDeclaration field, ArrayList<FieldDeclaration> deadFields, CompilationUnit cu){
-        final boolean[] usageFound = {false};
-        for(VariableDeclarator vd: field.getVariables()){
-            String varName = vd.getNameAsString();
-            cu.getType(0).accept(new VoidVisitorAdapter<Object>() {
-                @Override
-                public void visit(MethodCallExpr node, Object arg){
-                    super.visit(node, arg);
-                    if(node.getScope().isPresent() && node.getScope().get().toString().equals(varName)){
-                        usageFound[0] = true;
-                    }
-                    for(Expression expression: node.getArguments()){
-                        if(expression.toString().equals(varName)){
-                            usageFound[0] = true;
-                        }
-                    }
-                }
-                @Override
-                public void visit(ObjectCreationExpr node, Object arg){
-                    super.visit(node, arg);
-                    for(Expression expression: node.getArguments()){
-                        if(expression.toString().equals(varName)){
-                            usageFound[0] = true;
-                        }
-                    }
-                }
-            }, null);
-        }
-        if(!usageFound[0]){
-            deadFields.add(field);
-        }
+    private List<String> getTokens(CompilationUnit cu){
+        List<String> tokens = new ArrayList<>();
+        //getting token range from the whole compilation unit is not working
+        cu.accept(new VoidVisitorAdapter<Object>() {
+            @Override
+            public void visit(MethodDeclaration md, Object arg){
+                super.visit(md, arg);
+                md.getTokenRange().get().forEach(t -> tokens.add(t.getText()));
+            }
+
+            @Override
+            public void visit(FieldDeclaration fd, Object arg){
+                super.visit(fd, arg);
+                fd.getVariables().forEach(vd -> {
+                 if(vd.getInitializer().isPresent()){
+                     vd.getInitializer().get().getTokenRange().ifPresent(javaTokens ->
+                             javaTokens.forEach(t -> tokens.add(t.getText())));
+                 }
+                });
+            }
+        }, null);
+        return tokens;
     }
 
     private void removeUnresolvedAnnotations(CompilationUnit cu){
