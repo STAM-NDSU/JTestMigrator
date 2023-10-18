@@ -49,9 +49,9 @@ public class TestCodeTransformer {
         String sourceTestMethod = searchResults.getSourceTestMethod();
         String targetTestMethod = searchResults.getTargetTestMethod();
 
-        CodeCoverageRunner runner = new CodeCoverageRunner();
-        firstCoverage = runner.runCodeCoverage(true);
-        handleCoverageResult(true, firstCoverage);
+        //CodeCoverageRunner runner = new CodeCoverageRunner();
+        //firstCoverage = runner.runCodeCoverage(true);
+        //handleCoverageResult(true, firstCoverage);
 
         //CompilationUnit cu = SetupTargetApp.getTestCompilationFromTargetApp(testFile);
         CompilationUnit cu = SetupTargetApp.getCompilationUnit(testFile);
@@ -93,12 +93,14 @@ public class TestCodeTransformer {
         boolean migrationSuccess = runMigratedTest();
         removeAddedTestFilter();
 
+        /*
         if(migrationSuccess){
-            handleCoverageResult(false, runner.runCodeCoverage(false));
+            //handleCoverageResult(false, runner.runCodeCoverage(false));
         }else{
             //Migration fails, no new code coverage.
             System.out.println("Could not calculate code coverage.");
         }
+         */
     }
 
     //remove test methods that are not intended to be tested
