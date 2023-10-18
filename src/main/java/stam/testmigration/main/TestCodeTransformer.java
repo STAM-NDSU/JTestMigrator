@@ -151,6 +151,15 @@ public class TestCodeTransformer {
                     mdSourceNodes.add(node);
                 }
             }
+
+            @Override
+            public void visit(MethodReferenceExpr expr, Object arg){
+                super.visit(expr, arg);
+                if((expr.getIdentifier().equals(sourceTestMethod) || helperTargetTestMethods.contains(expr.getIdentifier()))
+                        && !mdSourceNodes.contains(node)){
+                    mdSourceNodes.add(node);
+                }
+            }
         }, null);
     }
 
