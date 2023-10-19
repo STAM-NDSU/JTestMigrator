@@ -694,15 +694,15 @@ public class TestCodeTransformer {
         if(errors[0] == 1){
             testFailed = false;
             //Could not migrate the test due to compile errors
-            System.out.println("Test Migration Complete. Calculating Code Coverage...");
+            System.out.println("Test Migration Complete.");
         }
         if(errors[1] == 0){
             testFailed = false;
             //Test migrated successfully
-            System.out.println("Test Migration Complete. Calculating Code Coverage...");
+            System.out.println("Test Migration Complete.");
         }
         //Test migrated successfully, but does not pass
-        if(testFailed) System.out.println("Test Migration Complete. Calculating Code Coverage...");
+        if(testFailed) System.out.println("Test Migration Complete.");
 
         return errors[1] == 0 || testFailed;
     }
