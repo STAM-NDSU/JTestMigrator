@@ -8,7 +8,7 @@ public class TestMigrator {
         ConfigurationRetriever configRet = new ConfigurationRetriever();
         configRet.getConfigurations();
         configRet.getSourceTargetDirs();
-
+        System.out.println("Migrating Unit Tests...");
         new SetupTargetApp().setupTarget();
         new TestCodeTransformer().transformTest();
     }
