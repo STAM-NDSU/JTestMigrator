@@ -115,7 +115,7 @@ public class InputGenerator {
 
     private void generateInputReference(Parameter param){
         String paramType = param.getTypeAsString();
-        String paramName = param.getNameAsString();
+        String paramName = checkNameExists(param.getNameAsString());
 
        if(paramType.equals("String")){
            if(!getFieldNames().contains(paramName)){
@@ -168,7 +168,7 @@ public class InputGenerator {
 
     private void generateInputPrimitive(Parameter parameter){
         String paramType = parameter.getTypeAsString();
-        String paramName = parameter.getNameAsString();
+        String paramName = checkNameExists(parameter.getNameAsString());
 
         if(!getFieldNames().contains(paramName)){
             VariableDeclarator vd = new VariableDeclarator().setType(paramType).setName(paramName);
@@ -348,6 +348,15 @@ public class InputGenerator {
                 }
             }
         }, null);
+    }
+
+    private String checkNameExists(String name){
+        ArrayList<FieldDeclaration> fieldsInTest = new ArrayList<>(cu.getType(0).getFields());
+        for(FieldDeclaration field: fieldsInTest) {
+            String fieldName = field.getVariable(0).getNameAsString();
+            if(fieldName.equals(name)) return name+RandomStringUtils.random(3, true, false);
+        }
+        return name;
     }
 
 }

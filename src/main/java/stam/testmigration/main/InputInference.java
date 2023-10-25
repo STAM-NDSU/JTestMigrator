@@ -335,7 +335,9 @@ public class InputInference {
     }
 
     private boolean sameParamTypes(List<String> sourceTypes, List<String> targetTypes){
-        if(sourceTypes.size() == targetTypes.size()){
+        if(!varArgInTarget && sourceTypes.size() != targetTypes.size()) {
+            return false;
+        }else {
             for(String type: sourceTypes){
                 if(!targetTypes.contains(type)) return false;
             }

@@ -530,6 +530,12 @@ public class TestCodeCleaner {
             }
 
             @Override
+            public void visit(MethodCallExpr mc, Object arg){
+                super.visit(mc, arg);
+                mc.getArguments().forEach(expr -> tokens.add(expr.toString()));
+            }
+
+            @Override
             public void visit(FieldDeclaration fd, Object arg){
                 super.visit(fd, arg);
                 fd.getVariables().forEach(vd -> {
